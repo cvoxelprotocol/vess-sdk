@@ -1,0 +1,27 @@
+{
+  "name": "vess-sdk",
+  "version": "0.1.0",
+  "description": "SDK for VESS built on top of Ceramic",
+  "main": "dist/index.js",
+  "author": "kantaro.eth",
+  "private": false,
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "yarn build"
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.7",
+    "typescript": "^4.8.4"
+  },
+  "dependencies": {
+    "@ceramicnetwork/http-client": "^2.7.0",
+    "@ceramicnetwork/stream-tile": "^2.6.0",
+    "@glazed/types": "^0.2.0",
+    "@metamask/eth-sig-util": "^5.0.0",
+    "ethers": "^5.7.2"
+  }
+}
