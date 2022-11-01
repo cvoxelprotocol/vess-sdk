@@ -1,8 +1,10 @@
 {
   "name": "vess-sdk",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "SDK for VESS built on top of Ceramic",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
   "author": "kantaro.eth",
   "private": false,
   "license": "MIT",
@@ -12,7 +14,7 @@
     "package.json"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp -r ./src/__generated__/types ./dist/__generated__/.",
     "prepublishOnly": "yarn build"
   },
   "devDependencies": {

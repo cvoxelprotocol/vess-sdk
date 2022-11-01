@@ -1,24 +1,27 @@
 import { ModelTypeAliases } from "@glazed/types";
-import { CreatedMemberships } from "./CreatedMemberships";
-import { CreatedMembershipSubjects } from "./CreatedMembershipSubjects";
-import { CreatedOrganizations } from "./CreatedOrganizations";
+import { CreatedMemberships } from "../__generated__/types/CreatedMemberships";
+import { CreatedMembershipSubjects } from "../__generated__/types/CreatedMembershipSubjects";
+import { CreatedOrganizations } from "../__generated__/types/CreatedOrganizations";
 import {
   EventAttendanceVerifiableCredential,
   VerifiableMembershipSubjectCredential,
 } from "./eip712";
-import { Event } from "./Event";
-import { HeldEventAttendanceVerifiableCredentials } from "./HeldEventAttendanceVerifiableCredentials";
-import { HeldVerifiableMembershipSubjects } from "./HeldVerifiableMembershipSubjects";
-import { HeldVerifiableWorkCredentials } from "./HeldVerifiableWorkCredentials";
-import { HeldWorkCredentials } from "./HeldWorkCredentials";
-import { IssuedEventAttendanceVerifiableCredentials } from "./IssuedEventAttendanceVerifiableCredentials";
-import { IssuedEvents } from "./IssuedEvents";
-import { IssuedVerifiableMembershipSubjects } from "./IssuedVerifiableMembershipSubjects";
-import { Membership } from "./MemberShip";
-import { MembershipSubject } from "./MembershipSubject";
-import { Organization } from "./Organization";
-import { VerifiableWorkCredential } from "./VerifiableWorkCredential";
-import { DeliverableItem, WorkCredential } from "./WorkCredential";
+import { Event } from "../__generated__/types/Event";
+import { HeldEventAttendanceVerifiableCredentials } from "../__generated__/types/HeldEventAttendanceVerifiableCredentials";
+import { HeldVerifiableMembershipSubjects } from "../__generated__/types/HeldVerifiableMembershipSubjects";
+import { HeldVerifiableWorkCredentials } from "../__generated__/types/HeldVerifiableWorkCredentials";
+import { HeldWorkCredentials } from "../__generated__/types/HeldWorkCredentials";
+import { IssuedEventAttendanceVerifiableCredentials } from "../__generated__/types/IssuedEventAttendanceVerifiableCredentials";
+import { IssuedEvents } from "../__generated__/types/IssuedEvents";
+import { IssuedVerifiableMembershipSubjects } from "../__generated__/types/IssuedVerifiableMembershipSubjects";
+import { Membership } from "../__generated__/types/MemberShip";
+import { MembershipSubject } from "../__generated__/types/MembershipSubject";
+import { Organization } from "../__generated__/types/Organization";
+import { VerifiableWorkCredential } from "../__generated__/types/VerifiableWorkCredential";
+import {
+  DeliverableItem,
+  WorkCredential,
+} from "../__generated__/types/WorkCredential";
 
 export type OldWorkCredential = {
   to: string; // payee address. maybe contract address

@@ -1,6 +1,10 @@
-import { EventAttendance } from "./EventAttendanceVerifiableCredential";
-import { VerifiableMembershipSubject } from "./VerifiableMembershipSubjectCredential";
-import { WorkCredential, WorkSubject } from "./WorkCredential";
+import { VerifiableMembershipSubject } from "../__generated__/types/VerifiableMembershipSubjectCredential";
+import { EventAttendance } from "../__generated__/types/EventAttendanceVerifiableCredential";
+
+import {
+  WorkCredential,
+  WorkSubject,
+} from "../__generated__/types/WorkCredential";
 
 type Extensible<T> = T & { [x: string]: any };
 export type IssuerType = Extensible<{ id: string }>;

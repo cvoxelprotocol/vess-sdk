@@ -7,7 +7,7 @@ import {
   OrganizationWIthId,
   VerifiableWorkCredentialWithId,
   WorkCredentialWithId,
-} from "./types";
+} from "./interface";
 import {
   createTileDocument,
   getDataModel,
@@ -17,9 +17,10 @@ import {
 } from "./utils/ceramicHelper";
 import { convertDateToTimestampStr } from "./utils/common";
 import {
+  createEIP712WorkCredential,
   createEventAttendanceCredential,
   createVerifiableMembershipSubjectCredential,
-  getEIP712WorkCredentialSubjectSignature,
+  _getEIP712WorkCredentialSubjectSignature,
 } from "./utils/providerHelper";
 
 import { Web3Provider, ExternalProvider } from "@ethersproject/providers";
@@ -29,34 +30,37 @@ import { TileDocument } from "@ceramicnetwork/stream-tile";
 import { CeramicClient } from "@ceramicnetwork/http-client";
 import { DIDDataStore } from "@glazed/did-datastore";
 import { removeUndefinedFromArray } from "./utils/common";
-import { WorkCredential } from "./types/WorkCredential";
+import {
+  WorkCredential,
+  WorkSubject,
+} from "./__generated__/types/WorkCredential";
 import { ModelTypesToAliases } from "@glazed/types";
-import { HeldWorkCredentials } from "./types/HeldWorkCredentials";
-import { CreatedOrganizations } from "./types/CreatedOrganizations";
-import { CreatedMemberships } from "./types/CreatedMemberships";
-import { IssuedVerifiableMembershipSubjects } from "./types/IssuedVerifiableMembershipSubjects";
-import { HeldVerifiableMembershipSubjects } from "./types/HeldVerifiableMembershipSubjects";
-import { IssuedEvents } from "./types/IssuedEvents";
-import { IssuedEventAttendanceVerifiableCredentials } from "./types/IssuedEventAttendanceVerifiableCredentials";
-import { HeldEventAttendanceVerifiableCredentials } from "./types/HeldEventAttendanceVerifiableCredentials";
-import { Organization } from "./types/Organization";
-import { Membership } from "./types/MemberShip";
+import { HeldWorkCredentials } from "./__generated__/types/HeldWorkCredentials";
+import { CreatedOrganizations } from "./__generated__/types/CreatedOrganizations";
+import { CreatedMemberships } from "./__generated__/types/CreatedMemberships";
+import { IssuedVerifiableMembershipSubjects } from "./__generated__/types/IssuedVerifiableMembershipSubjects";
+import { HeldVerifiableMembershipSubjects } from "./__generated__/types/HeldVerifiableMembershipSubjects";
+import { IssuedEvents } from "./__generated__/types/IssuedEvents";
+import { IssuedEventAttendanceVerifiableCredentials } from "./__generated__/types/IssuedEventAttendanceVerifiableCredentials";
+import { HeldEventAttendanceVerifiableCredentials } from "./__generated__/types/HeldEventAttendanceVerifiableCredentials";
+import { Organization } from "./__generated__/types/Organization";
+import { Membership } from "./__generated__/types/MemberShip";
 import {
   EventAttendanceVerifiableCredential,
   VerifiableMembershipSubjectCredential,
-} from "./types/eip712";
-import { VerifiableMembershipSubject } from "./types/VerifiableMembershipSubjectCredential";
-import { EventAttendance } from "./types/EventAttendanceVerifiableCredential";
+} from "./interface/eip712";
+import { VerifiableMembershipSubject } from "./__generated__/types/VerifiableMembershipSubjectCredential";
+import { EventAttendance } from "./__generated__/types/EventAttendanceVerifiableCredential";
 import { BackupDataStore } from "./utils/backupDataStoreHelper";
 import { ethers } from "ethers";
 import { DIDSession } from "did-session";
-import { VerifiableWorkCredential } from "./types/VerifiableWorkCredential";
-import { HeldVerifiableWorkCredentials } from "./types/HeldVerifiableWorkCredentials";
-import { MembershipSubject } from "./types/MembershipSubject";
-import { Event } from "./types/Event";
+import { VerifiableWorkCredential } from "./__generated__/types/VerifiableWorkCredential";
+import { HeldVerifiableWorkCredentials } from "./__generated__/types/HeldVerifiableWorkCredentials";
+import { Event } from "./__generated__/types/Event";
 
 export const PROD_CERAMIC_URL = "https://prod.cvoxelceramic.com/";
-export const TESTNET_CERAMIC_URL = "https://ceramic-clay.3boxlabs.com";
+// export const TESTNET_CERAMIC_URL = "https://ceramic-clay.3boxlabs.com";
+export const TESTNET_CERAMIC_URL = "http://localhost:7007/";
 
 export type BaseResponse = {
   status: 200 | 300;
@@ -81,9 +85,9 @@ export class VESS {
   backupDataStore = undefined as BackupDataStore | undefined;
 
   constructor(
+    env: "mainnet" | "testnet-clay" = "mainnet",
     provider?: Web3Provider,
-    ceramic?: CeramicClient,
-    env: "mainnet" | "testnet-clay" = "mainnet"
+    ceramic?: CeramicClient
   ) {
     this.provider = provider;
     this.ceramic = ceramic;
@@ -106,32 +110,28 @@ export class VESS {
   }
 
   connect = async (
-    provider?: ExternalProvider
-  ): Promise<AuthReposnse | BaseResponse> => {
+    provider?: ExternalProvider,
+    env: "mainnet" | "testnet-clay" = "mainnet"
+  ): Promise<DIDSession> => {
+    this.dataModel = getDataModel(env);
+    this.env = env;
+    this.ceramicUrl =
+      this.env === "mainnet" ? PROD_CERAMIC_URL : TESTNET_CERAMIC_URL;
+
     if (!provider) {
       if ((window as any).ethereum) {
         console.log(
           "VESS SDK: You need to pass the provider as an argument in the `connect()` function. We will be using window.ethereum by default."
         );
         provider = (window as any).ethereum;
-      } else {
-        alert(
-          "An ethereum provider is required to proceed with the connection to Ceramic."
-        );
-        return {
-          status: 300,
-          result:
-            "An ethereum provider is required to proceed with the connection to Ceramic.",
-        };
       }
     }
+    if (!provider) {
+      throw new Error(
+        "An ethereum provider is required to proceed with the connection to Ceramic."
+      );
+    }
 
-    if (!provider)
-      return {
-        status: 300,
-        result:
-          "An ethereum provider is required to proceed with the connection to Ceramic.",
-      };
     this.provider = new ethers.providers.Web3Provider(provider, 1);
     try {
       if (this.provider.provider.request) {
@@ -143,11 +143,8 @@ export class VESS {
         await this.provider.send("eth_accounts", []);
       }
     } catch (e) {
-      return {
-        status: 300,
-        error: e,
-        result: "Error enabling Ethereum provider.",
-      };
+      console.log(e);
+      throw new Error("Error enabling Ethereum provider.");
     }
     const signer = this.provider.getSigner();
     const account = await signer.getAddress();
@@ -158,7 +155,8 @@ export class VESS {
         this.provider.provider,
         accountId
       );
-      this.session = await loadSession(authMethod);
+      const session = await loadSession(authMethod);
+      this.session = session;
       this.ceramic = new CeramicClient(this.ceramicUrl);
       this.ceramic.did = this.session.did;
       this.dataStore = new DIDDataStore({
@@ -166,17 +164,11 @@ export class VESS {
         model: this.dataModel,
         id: this.ceramic?.did?.parent,
       });
-      return {
-        status: 200,
-        did: this.session.did.parent,
-        result: "Success connecting to the DiD.",
-      };
+      console.log("ceramic authorized!", this.env);
+      return session;
     } catch (e) {
-      return {
-        status: 300,
-        error: e,
-        result: "Error authorizing DID session.",
-      };
+      console.log(e);
+      throw new Error("Error authorizing DID session.");
     }
   };
 
@@ -235,6 +227,8 @@ export class VESS {
   getHeldWorkCredentials = async (
     did?: string
   ): Promise<WorkCredentialWithId[]> => {
+    console.log("getHeldWorkCredentials called!", this.env);
+    console.log("getHeldWorkCredentials called!", this.ceramicUrl);
     if (!did || !this.dataModel) return [];
     const ceramic = this.ceramic || new CeramicClient(this.ceramicUrl);
     const dataStore =
@@ -612,8 +606,8 @@ export class VESS {
    * @returns streamid
    */
   issueWorkCredential = async (
-    content: WorkCredential
-  ): Promise<CustomResponse<{ streamId?: string }>> => {
+    content: WorkSubject
+  ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
     if (
       !this.ceramic ||
       !this.ceramic?.did?.parent ||
@@ -623,17 +617,23 @@ export class VESS {
       return {
         status: 300,
         result: "You need to call connect first",
+        streamId: undefined,
       };
     }
     try {
+      const credential = await createEIP712WorkCredential(
+        this.ceramic?.did?.parent,
+        content,
+        this.provider
+      );
       const doc = await createTileDocument<WorkCredential>(
         this.ceramic,
         this.ceramic?.did?.parent,
-        content,
+        credential,
         getSchema(this.dataModel, "WorkCredential")
       );
       const docUrl = doc.id.toUrl();
-      const crdl: WorkCredentialWithId = { ...content, backupId: docUrl };
+      const crdl: WorkCredentialWithId = { ...credential, backupId: docUrl };
       const setHeldWC = this.setHeldWorkCredentials([docUrl]);
       const uploadBackup = this.backupDataStore.uploadCRDL(crdl);
       await Promise.all([setHeldWC, uploadBackup]);
@@ -646,6 +646,7 @@ export class VESS {
         status: 300,
         error: error,
         result: "Failed to Issue Work Credential",
+        streamId: undefined,
       };
     }
   };
@@ -670,7 +671,7 @@ export class VESS {
    */
   issueVerifiableWorkCredential = async (
     content: VerifiableWorkCredential
-  ): Promise<CustomResponse<{ streamId?: string }>> => {
+  ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
     if (
       !this.ceramic ||
       !this.ceramic?.did?.parent ||
@@ -680,6 +681,7 @@ export class VESS {
       return {
         status: 300,
         result: "You need to call connect first",
+        streamId: undefined,
       };
     }
     try {
@@ -707,6 +709,7 @@ export class VESS {
         status: 300,
         error: error,
         result: "Failed to Issue Work Credential",
+        streamId: undefined,
       };
     }
   };
@@ -733,7 +736,7 @@ export class VESS {
    */
   createOrganization = async (
     content: Organization
-  ): Promise<CustomResponse<{ streamId?: string }>> => {
+  ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
     if (
       !this.ceramic ||
       !this.ceramic?.did?.parent ||
@@ -743,6 +746,7 @@ export class VESS {
       return {
         status: 300,
         result: "You need to call connect first",
+        streamId: undefined,
       };
     }
     try {
@@ -767,6 +771,7 @@ export class VESS {
         status: 300,
         error: error,
         result: "Failed to Issue Work Credential",
+        streamId: undefined,
       };
     }
   };
@@ -786,7 +791,7 @@ export class VESS {
 
   createMembership = async (
     content: Membership
-  ): Promise<CustomResponse<{ streamId?: string }>> => {
+  ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
     if (
       !this.ceramic ||
       !this.ceramic?.did?.parent ||
@@ -796,6 +801,7 @@ export class VESS {
       return {
         status: 300,
         result: "You need to call connect first",
+        streamId: undefined,
       };
     }
     try {
@@ -820,6 +826,7 @@ export class VESS {
         status: 300,
         error: error,
         result: "Failed to Issue Work Credential",
+        streamId: undefined,
       };
     }
   };
@@ -838,7 +845,7 @@ export class VESS {
 
   createEvent = async (
     content: Event
-  ): Promise<CustomResponse<{ streamId?: string }>> => {
+  ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
     if (
       !this.ceramic ||
       !this.ceramic?.did?.parent ||
@@ -848,6 +855,7 @@ export class VESS {
       return {
         status: 300,
         result: "You need to call connect first",
+        streamId: undefined,
       };
     }
     try {
@@ -872,6 +880,7 @@ export class VESS {
         status: 300,
         error: error,
         result: "Failed to Issue Work Credential",
+        streamId: undefined,
       };
     }
   };
@@ -896,7 +905,7 @@ export class VESS {
 
   issueMembershipSubject = async (
     content: VerifiableMembershipSubject
-  ): Promise<CustomResponse<{ streamId?: string }>> => {
+  ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
     if (
       !this.ceramic ||
       !this.ceramic?.did?.parent ||
@@ -906,15 +915,16 @@ export class VESS {
       return {
         status: 300,
         result: "You need to call connect first",
+        streamId: undefined,
       };
     }
-    // TODO: sign and create verifiable credential before save data
-    const vc = await createVerifiableMembershipSubjectCredential(
-      content,
-      this.provider
-    );
 
     try {
+      // TODO: sign and create verifiable credential before save data
+      const vc = await createVerifiableMembershipSubjectCredential(
+        content,
+        this.provider
+      );
       const doc =
         await createTileDocument<VerifiableMembershipSubjectCredential>(
           this.ceramic,
@@ -937,13 +947,14 @@ export class VESS {
         status: 300,
         error: error,
         result: "Failed to Issue Work Credential",
+        streamId: undefined,
       };
     }
   };
 
   issueEventAttendanceCredential = async (
     content: EventAttendance
-  ): Promise<CustomResponse<{ streamId?: string }>> => {
+  ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
     if (
       !this.ceramic ||
       !this.ceramic?.did?.parent ||
@@ -953,6 +964,7 @@ export class VESS {
       return {
         status: 300,
         result: "You need to call connect first",
+        streamId: undefined,
       };
     }
     try {
@@ -981,6 +993,7 @@ export class VESS {
         status: 300,
         error: error,
         result: "Failed to Issue Work Credential",
+        streamId: undefined,
       };
     }
   };
@@ -1150,7 +1163,7 @@ export class VESS {
   ): Promise<WorkCredentialWithId | undefined> => {
     if (!this.backupDataStore) return undefined;
     const nowTimestamp = convertDateToTimestampStr(new Date());
-    const signature = await getEIP712WorkCredentialSubjectSignature(
+    const signature = await _getEIP712WorkCredentialSubjectSignature(
       credential.subject,
       this.provider
     );
@@ -1166,4 +1179,25 @@ export class VESS {
     await this.backupDataStore.uploadCRDL({ ...crdl, backupId: id });
     return crdl;
   };
+
+  getEIP712WorkCredentialSubjectSignature = async (
+    subject: WorkSubject
+  ): Promise<string> => {
+    return await _getEIP712WorkCredentialSubjectSignature(
+      subject,
+      this.provider
+    );
+  };
 }
+
+let vess: VESS;
+
+export const getVESS = (dev: boolean = false): VESS => {
+  if (vess) {
+    return vess;
+  }
+  console.log("VESS Initialized!", dev);
+  const env = !dev ? "mainnet" : "testnet-clay";
+  vess = new VESS(env);
+  return vess;
+};

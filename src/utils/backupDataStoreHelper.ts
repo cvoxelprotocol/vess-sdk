@@ -9,7 +9,7 @@ import {
   OrganizationWIthId,
   VerifiableWorkCredentialWithId,
   WorkCredentialWithId,
-} from "../types";
+} from "../interface";
 import { removeCeramicPrefix } from "./ceramicHelper";
 
 const devConfig = {

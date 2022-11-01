@@ -5,7 +5,7 @@ import {
   recoverTypedSignature,
 } from "@metamask/eth-sig-util";
 
-import { EventAttendanceWithId } from "../types";
+import { EventAttendanceWithId } from "../interface";
 import {
   CLIENT_EIP712_TYPE,
   CREDENTIAL_SCHEMA_W3C_TYPE,
@@ -32,12 +32,17 @@ import {
   WORK_SUBJECT_EIP712_TYPE,
   EVENT_ATTENDANCE_EIP712_TYPE,
   EventAttendanceVerifiableCredential,
-} from "../types/eip712";
+} from "../interface/eip712";
 
 import { getPkhDIDFromAddress } from "./ceramicHelper";
-import { WorkSubject } from "../types/WorkCredential";
-import { VerifiableMembershipSubject } from "../types/VerifiableMembershipSubjectCredential";
-import { EventAttendance } from "../types/EventAttendanceVerifiableCredential";
+import {
+  Signatures,
+  WorkCredential,
+  WorkSubject,
+} from "../__generated__/types/WorkCredential";
+import { VerifiableMembershipSubject } from "../__generated__/types/VerifiableMembershipSubjectCredential";
+import { EventAttendance } from "../__generated__/types/EventAttendanceVerifiableCredential";
+import { convertDateToTimestampStr } from "./common";
 
 const DEFAULT_CONTEXT = "https://www.w3.org/2018/credentials/v1";
 const EIP712_CONTEXT =
@@ -54,22 +59,43 @@ const EVENT_DOMAIN_NAME = "Verifiable Event Attendance";
 const WORK_DOMAIN_NAME = "Work Credential";
 const MEMBERSHIP_DOMAIN_NAME = "Verifiable Member Subject";
 
-export const getEIP712WorkCredentialSubjectSignature = async (
+export const createEIP712WorkCredential = async (
+  id: string,
+  subject: WorkSubject,
+  provider?: Web3Provider
+): Promise<WorkCredential> => {
+  if (!provider) throw new Error("Missing provider for getSignature");
+  const nowTimestamp = convertDateToTimestampStr(new Date());
+  const holderSig = await _getEIP712WorkCredentialSubjectSignature(
+    subject,
+    provider
+  );
+  const signature: Signatures = {
+    holderSig: holderSig,
+  };
+  return {
+    id: id,
+    subject: subject,
+    signature: signature,
+    createdAt: nowTimestamp,
+    updatedAt: nowTimestamp,
+  };
+};
+
+export const _getEIP712WorkCredentialSubjectSignature = async (
   subject: WorkSubject,
   provider?: Web3Provider
 ): Promise<string> => {
-  if (!provider) throw "Missing provider for getSignature";
-
+  if (!provider) throw new Error("Missing provider for getSignature");
   const domain = getDefaultDomainTypedData(WORK_DOMAIN_NAME);
 
   const credentialTypedData = getEIP712WorkSubjectTypedData(domain, subject);
   const signer = provider.getSigner();
   const address = await signer.getAddress();
-  const signature = await provider.send("eth_signTypedData_v4", [
+  return await provider.send("eth_signTypedData_v4", [
     address,
     JSON.stringify(credentialTypedData),
   ]);
-  return signature;
 };
 
 const getEIP712WorkSubjectTypedData = (
@@ -95,7 +121,7 @@ export const createVerifiableMembershipSubjectCredential = async (
   membershipSubject: VerifiableMembershipSubject,
   provider?: Web3Provider
 ): Promise<VerifiableMembershipSubjectCredential> => {
-  if (!provider) throw "Missing provider for getSignature";
+  if (!provider) throw new Error("Missing provider for getSignature");
 
   let issuanceDate = Date.now();
   let expirationDate = new Date();
@@ -146,7 +172,7 @@ export const createEventAttendanceCredential = async (
   eventAttendance: EventAttendance,
   provider?: Web3Provider
 ): Promise<EventAttendanceVerifiableCredential> => {
-  if (!provider) throw "Missing provider for getSignature";
+  if (!provider) throw new Error("Missing provider for getSignature");
 
   let issuanceDate = Date.now();
   let expirationDate = new Date();
