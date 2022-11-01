@@ -1,8 +1,8 @@
 import { CeramicClient } from "@ceramicnetwork/http-client";
 import { TileDocument } from "@ceramicnetwork/stream-tile";
-import { aliases as devModelAliases } from "../__generated__/aliases_dev";
-import { aliases as prodModelAliases } from "../__generated__/aliases";
-import { AliasTypes, ModelTypes } from "../interface";
+import { aliases as devModelAliases } from "../__generated__/aliases_dev.js";
+import { aliases as prodModelAliases } from "../__generated__/aliases.js";
+import { AliasTypes, ModelTypes } from "../interface/index.js";
 import { ModelTypesToAliases } from "@glazed/types";
 import type { AuthMethod } from "@didtools/cacao";
 import { DIDSession } from "did-session";

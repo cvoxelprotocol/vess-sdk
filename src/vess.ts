@@ -53,7 +53,7 @@ import {
 } from "./interface/eip712.js";
 import { VerifiableMembershipSubject } from "./__generated__/types/VerifiableMembershipSubjectCredential";
 import { EventAttendance } from "./__generated__/types/EventAttendanceVerifiableCredential";
-import { BackupDataStore } from "./utils/backupDataStoreHelper";
+import { BackupDataStore } from "./utils/backupDataStoreHelper.js";
 import { ethers } from "ethers";
 import { DIDSession } from "did-session";
 import { VerifiableWorkCredential } from "./__generated__/types/VerifiableWorkCredential";
