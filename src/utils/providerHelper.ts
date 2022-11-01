@@ -5,7 +5,7 @@ import {
   recoverTypedSignature,
 } from "@metamask/eth-sig-util";
 
-import { EventAttendanceWithId } from "../interface";
+import { EventAttendanceWithId } from "../interface/index.js";
 import {
   CLIENT_EIP712_TYPE,
   CREDENTIAL_SCHEMA_W3C_TYPE,
@@ -32,9 +32,9 @@ import {
   WORK_SUBJECT_EIP712_TYPE,
   EVENT_ATTENDANCE_EIP712_TYPE,
   EventAttendanceVerifiableCredential,
-} from "../interface/eip712";
+} from "../interface/eip712.js";
 
-import { getPkhDIDFromAddress } from "./ceramicHelper";
+import { getPkhDIDFromAddress } from "./ceramicHelper.js";
 import {
   Signatures,
   WorkCredential,
@@ -42,7 +42,7 @@ import {
 } from "../__generated__/types/WorkCredential";
 import { VerifiableMembershipSubject } from "../__generated__/types/VerifiableMembershipSubjectCredential";
 import { EventAttendance } from "../__generated__/types/EventAttendanceVerifiableCredential";
-import { convertDateToTimestampStr } from "./common";
+import { convertDateToTimestampStr } from "./common.js";
 
 const DEFAULT_CONTEXT = "https://www.w3.org/2018/credentials/v1";
 const EIP712_CONTEXT =

@@ -9,8 +9,8 @@ import {
   OrganizationWIthId,
   VerifiableWorkCredentialWithId,
   WorkCredentialWithId,
-} from "../interface";
-import { removeCeramicPrefix } from "./ceramicHelper";
+} from "../interface/index.js";
+import { removeCeramicPrefix } from "./ceramicHelper.js";
 
 const devConfig = {
   apiKey: "AIzaSyDM6_03vyBSTw1tqVEo8c-6aFOMJGIedeE",

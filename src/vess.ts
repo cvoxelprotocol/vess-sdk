@@ -7,21 +7,24 @@ import {
   OrganizationWIthId,
   VerifiableWorkCredentialWithId,
   WorkCredentialWithId,
-} from "./interface";
+} from "./interface/index.js";
 import {
   createTileDocument,
   getDataModel,
   getSchema,
   loadSession,
   removeSession,
-} from "./utils/ceramicHelper";
-import { convertDateToTimestampStr } from "./utils/common";
+} from "./utils/ceramicHelper.js";
+import {
+  convertDateToTimestampStr,
+  removeUndefinedFromArray,
+} from "./utils/common.js";
 import {
   createEIP712WorkCredential,
   createEventAttendanceCredential,
   createVerifiableMembershipSubjectCredential,
   _getEIP712WorkCredentialSubjectSignature,
-} from "./utils/providerHelper";
+} from "./utils/providerHelper.js";
 
 import { Web3Provider, ExternalProvider } from "@ethersproject/providers";
 import { EthereumWebAuth, getAccountId } from "@didtools/pkh-ethereum";
@@ -29,7 +32,6 @@ import { EthereumWebAuth, getAccountId } from "@didtools/pkh-ethereum";
 import { TileDocument } from "@ceramicnetwork/stream-tile";
 import { CeramicClient } from "@ceramicnetwork/http-client";
 import { DIDDataStore } from "@glazed/did-datastore";
-import { removeUndefinedFromArray } from "./utils/common";
 import {
   WorkCredential,
   WorkSubject,
@@ -48,7 +50,7 @@ import { Membership } from "./__generated__/types/MemberShip";
 import {
   EventAttendanceVerifiableCredential,
   VerifiableMembershipSubjectCredential,
-} from "./interface/eip712";
+} from "./interface/eip712.js";
 import { VerifiableMembershipSubject } from "./__generated__/types/VerifiableMembershipSubjectCredential";
 import { EventAttendance } from "./__generated__/types/EventAttendanceVerifiableCredential";
 import { BackupDataStore } from "./utils/backupDataStoreHelper";
