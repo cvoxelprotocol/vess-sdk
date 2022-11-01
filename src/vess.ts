@@ -59,8 +59,8 @@ import { HeldVerifiableWorkCredentials } from "./__generated__/types/HeldVerifia
 import { Event } from "./__generated__/types/Event";
 
 export const PROD_CERAMIC_URL = "https://prod.cvoxelceramic.com/";
-// export const TESTNET_CERAMIC_URL = "https://ceramic-clay.3boxlabs.com";
-export const TESTNET_CERAMIC_URL = "http://localhost:7007/";
+export const TESTNET_CERAMIC_URL = "https://ceramic-clay.3boxlabs.com";
+// export const TESTNET_CERAMIC_URL = "http://localhost:7007/";
 
 export type BaseResponse = {
   status: 200 | 300;
