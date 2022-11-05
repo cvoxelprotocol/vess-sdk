@@ -5,15 +5,6 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-export type OrganizationName = string;
-export type Icon = string;
-export type MembershipName = string;
-export type Icon1 = string;
-export type OrganizationId = string;
-export type MembershipId = string;
-export type BasicEvidences = BasicEvidence[];
-export type UpdatedAt = string;
-
 export interface VerifiableMembershipSubjectCredential {
   "@context": string[];
   type: string[];
@@ -51,21 +42,21 @@ export interface VerifiableMembershipSubjectCredential {
     };
     [k: string]: unknown;
   };
-  evidence?: BasicEvidences;
+  evidence?: BasicEvidence[];
   credentialStatus?: {
     id: string;
     type: string;
   };
-  updatedAt?: UpdatedAt;
+  updatedAt?: string;
 }
 export interface VerifiableMembershipSubject {
   id: string;
-  organizationName: OrganizationName;
-  organizationIcon?: Icon;
-  membershipName: MembershipName;
-  membershipIcon?: Icon1;
-  organizationId?: OrganizationId;
-  membershipId?: MembershipId;
+  organizationName: string;
+  organizationIcon?: string;
+  membershipName: string;
+  membershipIcon?: string;
+  organizationId?: string;
+  membershipId?: string;
   [k: string]: unknown;
 }
 export interface BasicEvidence {

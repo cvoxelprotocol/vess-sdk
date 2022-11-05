@@ -36,13 +36,13 @@ import {
 
 import { getPkhDIDFromAddress } from "./ceramicHelper.js";
 import {
-  Signatures,
   WorkCredential,
   WorkSubject,
 } from "../__generated__/types/WorkCredential";
 import { VerifiableMembershipSubject } from "../__generated__/types/VerifiableMembershipSubjectCredential";
 import { EventAttendance } from "../__generated__/types/EventAttendanceVerifiableCredential";
 import { convertDateToTimestampStr } from "./common.js";
+import { Signatures } from "../__generated__/index.js";
 
 const DEFAULT_CONTEXT = "https://www.w3.org/2018/credentials/v1";
 const EIP712_CONTEXT =
@@ -92,7 +92,7 @@ export const _getEIP712WorkCredentialSubjectSignature = async (
   const credentialTypedData = getEIP712WorkSubjectTypedData(domain, subject);
   const signer = provider.getSigner();
   const address = await signer.getAddress();
-  return await provider.send("eth_signTypedData_v4", [
+  return await safeSend(provider, "eth_signTypedData_v4", [
     address,
     JSON.stringify(credentialTypedData),
   ]);
@@ -158,7 +158,7 @@ export const createVerifiableMembershipSubjectCredential = async (
     async (data: EIP712TypedData<EIP712MessageTypes>) => {
       const signer = provider.getSigner();
       const address = await signer.getAddress();
-      const sig: string = await provider.send("eth_signTypedData_v4", [
+      const sig: string = await safeSend(provider, "eth_signTypedData_v4", [
         address,
         JSON.stringify(data),
       ]);
@@ -209,7 +209,7 @@ export const createEventAttendanceCredential = async (
     async (data: EIP712TypedData<EIP712MessageTypes>) => {
       const signer = provider.getSigner();
       const address = await signer.getAddress();
-      const sig: string = await provider.send("eth_signTypedData_v4", [
+      const sig: string = await safeSend(provider, "eth_signTypedData_v4", [
         address,
         JSON.stringify(data),
       ]);
@@ -240,7 +240,7 @@ export const verifyEventAttendanceCredential = async (
   );
 };
 
-const createEIP712VerifiableCredential = async (
+export const createEIP712VerifiableCredential = async (
   domain: EIP712DomainTypedData,
   credential: W3CCredential,
   credentialSubjectTypes: any,
@@ -333,3 +333,56 @@ const getDefaultDomainTypedData = (name: string): EIP712DomainTypedData => {
     verifyingContract: "0x00000000000000000000000000000000000000000000", // WIP
   };
 };
+
+export function safeSend(
+  provider: Web3Provider,
+  method: string,
+  params: any[]
+): Promise<any> {
+  if (params == null) {
+    params = [];
+  }
+  const execProvider = provider.provider;
+  if (execProvider.request) {
+    return execProvider
+      .request({
+        method,
+        params,
+      })
+      .then(
+        (response: any) => response,
+        (error: any) => {
+          throw error;
+        }
+      );
+  } else if (execProvider.sendAsync || execProvider.send) {
+    const sendFunc = (
+      execProvider.sendAsync ? execProvider.sendAsync : execProvider.send!
+    ).bind(provider);
+    const request = encodeRpcMessage(method, params);
+    return new Promise((resolve, reject) => {
+      sendFunc(request, (error: any, response: any) => {
+        if (error) reject(error);
+        if (response.error) {
+          const error1 = new Error(response.error.message);
+          console.log(response.error.code);
+          console.log(response.error.data);
+          reject(error1);
+        }
+        resolve(response.result);
+      });
+    });
+  } else {
+    throw new Error(
+      `Unsupported provider; provider must implement one of the following methods: send, sendAsync, request`
+    );
+  }
+}
+export function encodeRpcMessage(method: string, params: any[]) {
+  return {
+    jsonrpc: "2.0",
+    id: 1,
+    method,
+    params,
+  };
+}

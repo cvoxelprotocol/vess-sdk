@@ -5,17 +5,11 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-export type OrganizationId = string;
-export type Name = string;
-export type Desc = string;
-export type Icon = string;
-export type CreatedAt = string;
-
 export interface Membership {
-  organizationId: OrganizationId;
-  name: Name;
-  desc?: Desc;
-  icon?: Icon;
-  createdAt?: CreatedAt;
+  organizationId: string;
+  name: string;
+  desc?: string;
+  icon?: string;
+  createdAt?: string;
   [k: string]: unknown;
 }

@@ -89,6 +89,22 @@ export const addCeramicPrefix = (backupId: string) => {
   return `ceramic://${backupId}`;
 };
 
+export const isDIDstring = (did: string): boolean => {
+  const didRegex = /^did:([A-Za-z0-9]+):([A-Za-z0-9.\-:_]+)$/;
+  return didRegex.test(did);
+};
+
+export function formatDID(did: string, maxLength = 20): string {
+  if (maxLength < 12) {
+    maxLength = 12;
+  }
+  const half = Math.floor(maxLength / 2);
+  const remaining = half - 3 - maxLength;
+  return did.length <= maxLength
+    ? did
+    : `${did.slice(0, half)}...${did.slice(remaining)}`;
+}
+
 export const loadSession = async (
   authMethod: AuthMethod
 ): Promise<DIDSession> => {

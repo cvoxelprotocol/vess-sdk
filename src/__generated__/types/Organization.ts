@@ -5,7 +5,12 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-export interface HeldMembershipSubjects {
-  held?: string[];
+export interface Organization {
+  admin: string;
+  name: string;
+  desc?: string;
+  icon?: string;
+  orbisSocialGroupId?: string;
+  createdAt?: string;
   [k: string]: unknown;
 }

@@ -17,11 +17,11 @@ import { IssuedVerifiableMembershipSubjects } from "../__generated__/types/Issue
 import { Membership } from "../__generated__/types/MemberShip";
 import { MembershipSubject } from "../__generated__/types/MembershipSubject";
 import { Organization } from "../__generated__/types/Organization";
-import { VerifiableWorkCredential } from "../__generated__/types/VerifiableWorkCredential";
 import {
   DeliverableItem,
-  WorkCredential,
-} from "../__generated__/types/WorkCredential";
+  VerifiableWorkCredential,
+} from "../__generated__/types/VerifiableWorkCredential";
+import { WorkCredential } from "../__generated__/types/WorkCredential";
 
 export type OldWorkCredential = {
   to: string; // payee address. maybe contract address
@@ -174,3 +174,15 @@ const AliasType = {
   IssuedVerifiableMembershipSubjects: "IssuedVerifiableMembershipSubjects",
 } as const;
 export type AliasTypes = typeof AliasType[keyof typeof AliasType];
+
+export type BaseResponse = {
+  status: 200 | 300;
+  result?: string;
+  error?: any;
+};
+
+export type AuthReposnse = BaseResponse & {
+  did: string;
+};
+
+export type CustomResponse<T> = BaseResponse & T;

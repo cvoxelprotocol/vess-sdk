@@ -1,6 +1,3 @@
-import { VerifiableMembershipSubject } from "../__generated__/types/VerifiableMembershipSubjectCredential";
-import { EventAttendance } from "../__generated__/types/EventAttendanceVerifiableCredential";
-
 import {
   WorkCredential,
   WorkSubject,
@@ -349,7 +346,6 @@ export type VerifiableCredential = Verifiable<W3CCredential>;
 export type VerifiableMembershipSubjectCredential = VerifiableCredential & {
   credentialSubject: VerifiableMembershipSubject;
 };
-
 export type EventAttendanceVerifiableCredential = VerifiableCredential & {
   credentialSubject: EventAttendance;
 };
@@ -370,4 +366,22 @@ export interface EIP712CredentialTypedData
 export interface EIP712MembershipSubjectCredentialTypedData
   extends EIP712TypedData<EIP712MembershipSubjectCredentialMessageTypes> {
   message: EIP712Credential;
+}
+
+export interface EventAttendance {
+  id: string;
+  eventName: string;
+  eventIcon?: string;
+  eventId: string;
+  [k: string]: unknown;
+}
+export interface VerifiableMembershipSubject {
+  id: string;
+  organizationName: string;
+  organizationIcon?: string;
+  membershipName: string;
+  membershipIcon?: string;
+  organizationId?: string;
+  membershipId?: string;
+  [k: string]: unknown;
 }

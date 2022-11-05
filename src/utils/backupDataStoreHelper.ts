@@ -32,7 +32,7 @@ const prodConfig = {
   measurementId: "G-LX7P8TK3WR",
 };
 
-type issueEventAttendancesParam = {
+export type issueEventAttendancesParam = {
   event: EventWithId;
   dids: string[];
 };
