@@ -1,6 +1,6 @@
 {
   "name": "vess-sdk",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "SDK for VESS built on top of Ceramic",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -31,6 +31,7 @@
     "@metamask/eth-sig-util": "^5.0.0",
     "did-session": "^1.0.0",
     "ethers": "^5.7.2",
-    "firebase": "^9.13.0"
+    "firebase": "^9.13.0",
+    "react-device-detect": "^2.2.2"
   }
 }

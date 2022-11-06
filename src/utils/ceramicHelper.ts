@@ -118,6 +118,7 @@ export const loadSession = async (
   if (!session || (session.hasSession && session.isExpired)) {
     session = await DIDSession.authorize(authMethod, {
       resources: ["ceramic://*"],
+      expiresInSecs: 60 * 60 * 24 * 90,
     });
     localStorage.setItem("didsession", session.serialize());
   }

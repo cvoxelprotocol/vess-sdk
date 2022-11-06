@@ -38,6 +38,7 @@ import { ethers } from "ethers";
 import { DIDSession } from "did-session";
 import { BaseVESS, PROD_CERAMIC_URL, TESTNET_CERAMIC_URL } from "./baseVess.js";
 import { issueEventAttendancesParam } from "./utils/backupDataStoreHelper.js";
+import { isMobile, isTablet } from "react-device-detect";
 
 export class VESS extends BaseVESS {
   provider = undefined as Web3Provider | undefined;
@@ -74,10 +75,14 @@ export class VESS extends BaseVESS {
 
     this.provider = new ethers.providers.Web3Provider(provider, 1);
     try {
-      await safeSend(this.provider, "eth_requestAccounts", []);
+      if (!isMobile && !isTablet) {
+        await safeSend(this.provider, "eth_requestAccounts", []);
+      }
     } catch (e) {
       console.log(e);
-      throw new Error("Error enabling Ethereum provider.");
+      throw new Error(
+        `Error enabling Ethereum provider. Message: ${JSON.stringify(e)}`
+      );
     }
     const signer = this.provider.getSigner();
     const account = await signer.getAddress();
@@ -306,7 +311,6 @@ export const getVESS = (dev: boolean = false): VESS => {
   if (vess) {
     return vess;
   }
-  console.log("VESS Initialized!", dev);
   const env = !dev ? "mainnet" : "testnet-clay";
   vess = new VESS(env);
   return vess;
