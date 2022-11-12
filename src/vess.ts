@@ -11,7 +11,7 @@ import {
   loadSession,
   removeSession,
 } from "./utils/ceramicHelper.js";
-import { convertDateToTimestampStr } from "./utils/common.js";
+import { convertDateToTimestampStr, isMobileOrTablet } from "./utils/common.js";
 import {
   createEIP712WorkCredential,
   createEventAttendanceCredential,
@@ -38,7 +38,6 @@ import { ethers } from "ethers";
 import { DIDSession } from "did-session";
 import { BaseVESS, PROD_CERAMIC_URL, TESTNET_CERAMIC_URL } from "./baseVess.js";
 import { issueEventAttendancesParam } from "./utils/backupDataStoreHelper.js";
-import { isMobile, isTablet } from "react-device-detect";
 
 export class VESS extends BaseVESS {
   provider = undefined as Web3Provider | undefined;
@@ -75,7 +74,7 @@ export class VESS extends BaseVESS {
 
     this.provider = new ethers.providers.Web3Provider(provider, 1);
     try {
-      if (!isMobile && !isTablet) {
+      if (!isMobileOrTablet()) {
         await safeSend(this.provider, "eth_requestAccounts", []);
       }
     } catch (e) {
