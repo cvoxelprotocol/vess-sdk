@@ -13,23 +13,23 @@ import {
 import { removeCeramicPrefix } from "./ceramicHelper.js";
 
 const devConfig = {
-  apiKey: "AIzaSyDM6_03vyBSTw1tqVEo8c-6aFOMJGIedeE",
-  authDomain: "cvoxel-dev.firebaseapp.com",
-  projectId: "cvoxel-dev",
-  storageBucket: "cvoxel-dev.appspot.com",
-  messagingSenderId: "1003461766870",
-  appId: "1:1003461766870:web:143f659c21fd299edda377",
-  measurementId: "G-R09FCF4DDB",
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: "",
+  measurementId: "",
 };
 
 const prodConfig = {
-  apiKey: "AIzaSyAb0_9chcdQlW11OsPLhsMKui9EcOKk9JI",
-  authDomain: "cvoxel-testnet.firebaseapp.com",
-  projectId: "cvoxel-testnet",
-  storageBucket: "cvoxel-testnet.appspot.com",
-  messagingSenderId: "242627370440",
-  appId: "1:242627370440:web:ae1ec7095f1b93e91534fd",
-  measurementId: "G-LX7P8TK3WR",
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: "",
+  measurementId: "",
 };
 
 export type issueEventAttendancesParam = {
