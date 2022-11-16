@@ -1,4 +1,3 @@
-import { Web3Provider } from "@ethersproject/providers";
 import { utils } from "ethers";
 import {
   SignTypedDataVersion,
@@ -62,7 +61,7 @@ const MEMBERSHIP_DOMAIN_NAME = "Verifiable Member Subject";
 export const createEIP712WorkCredential = async (
   id: string,
   subject: WorkSubject,
-  provider?: Web3Provider
+  provider?: any
 ): Promise<WorkCredential> => {
   if (!provider) throw new Error("Missing provider for getSignature");
   const nowTimestamp = convertDateToTimestampStr(new Date());
@@ -84,16 +83,15 @@ export const createEIP712WorkCredential = async (
 
 export const _getEIP712WorkCredentialSubjectSignature = async (
   subject: WorkSubject,
-  provider?: Web3Provider
+  provider?: any
 ): Promise<string> => {
   if (!provider) throw new Error("Missing provider for getSignature");
   const domain = getDefaultDomainTypedData(WORK_DOMAIN_NAME);
 
   const credentialTypedData = getEIP712WorkSubjectTypedData(domain, subject);
-  const signer = provider.getSigner();
-  const address = await signer.getAddress();
+  const accounts = await safeSend(provider, "eth_accounts", []);
   return await safeSend(provider, "eth_signTypedData_v4", [
-    address,
+    accounts[0].toLowerCase(),
     JSON.stringify(credentialTypedData),
   ]);
 };
@@ -119,7 +117,7 @@ const getEIP712WorkSubjectTypedData = (
 
 export const createVerifiableMembershipSubjectCredential = async (
   membershipSubject: VerifiableMembershipSubject,
-  provider?: Web3Provider
+  provider?: any
 ): Promise<VerifiableMembershipSubjectCredential> => {
   if (!provider) throw new Error("Missing provider for getSignature");
 
@@ -128,8 +126,8 @@ export const createVerifiableMembershipSubjectCredential = async (
   expirationDate.setFullYear(expirationDate.getFullYear() + 100);
 
   const credentialId = `${membershipSubject.organizationId}-${membershipSubject.membershipId}-${membershipSubject.id}`;
-  const signer = provider.getSigner();
-  const address = await signer.getAddress();
+  const accounts = await safeSend(provider, "eth_accounts", []);
+  const address = accounts[0].toLowerCase();
   const issuerDID = getPkhDIDFromAddress(address);
 
   let credential: W3CCredential = {
@@ -156,8 +154,8 @@ export const createVerifiableMembershipSubjectCredential = async (
     credential,
     { CredentialSubject: MEMBERSHIP_SUBJECT_EIP712_TYPE },
     async (data: EIP712TypedData<EIP712MessageTypes>) => {
-      const signer = provider.getSigner();
-      const address = await signer.getAddress();
+      const accounts = await safeSend(provider, "eth_accounts", []);
+      const address = accounts[0].toLowerCase();
       const sig: string = await safeSend(provider, "eth_signTypedData_v4", [
         address,
         JSON.stringify(data),
@@ -170,7 +168,7 @@ export const createVerifiableMembershipSubjectCredential = async (
 
 export const createEventAttendanceCredential = async (
   eventAttendance: EventAttendance,
-  provider?: Web3Provider
+  provider?: any
 ): Promise<EventAttendanceVerifiableCredential> => {
   if (!provider) throw new Error("Missing provider for getSignature");
 
@@ -179,8 +177,8 @@ export const createEventAttendanceCredential = async (
   expirationDate.setFullYear(expirationDate.getFullYear() + 100);
 
   const credentialId = `${eventAttendance.eventId}-${eventAttendance.id}`;
-  const signer = provider.getSigner();
-  const address = await signer.getAddress();
+  const accounts = await safeSend(provider, "eth_accounts", []);
+  const address = accounts[0].toLowerCase();
   const issuerDID = getPkhDIDFromAddress(address);
 
   let credential: W3CCredential = {
@@ -207,8 +205,8 @@ export const createEventAttendanceCredential = async (
     credential,
     { CredentialSubject: EVENT_ATTENDANCE_EIP712_TYPE },
     async (data: EIP712TypedData<EIP712MessageTypes>) => {
-      const signer = provider.getSigner();
-      const address = await signer.getAddress();
+      const accounts = await safeSend(provider, "eth_accounts", []);
+      const address = accounts[0].toLowerCase();
       const sig: string = await safeSend(provider, "eth_signTypedData_v4", [
         address,
         JSON.stringify(data),
@@ -359,16 +357,19 @@ const getDefaultDomainTypedData = (name: string): EIP712DomainTypedData => {
 };
 
 export function safeSend(
-  provider: Web3Provider,
+  provider: any,
   method: string,
   params: any[]
 ): Promise<any> {
+  if (!provider)
+    throw new Error(
+      `Unsupported provider; provider must implement one of the following methods: send, sendAsync, request`
+    );
   if (params == null) {
     params = [];
   }
-  const execProvider = provider.provider;
-  if (execProvider.request) {
-    return execProvider
+  if (provider.request) {
+    return provider
       .request({
         method,
         params,
@@ -379,9 +380,9 @@ export function safeSend(
           throw error;
         }
       );
-  } else if (execProvider.sendAsync || execProvider.send) {
+  } else if (provider.sendAsync || provider.send) {
     const sendFunc = (
-      execProvider.sendAsync ? execProvider.sendAsync : execProvider.send!
+      provider.sendAsync ? provider.sendAsync : provider.send!
     ).bind(provider);
     const request = encodeRpcMessage(method, params);
     return new Promise((resolve, reject) => {

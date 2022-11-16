@@ -20,7 +20,6 @@ import {
   _getEIP712WorkCredentialSubjectSignature,
 } from "./utils/providerHelper.js";
 
-import { Web3Provider, ExternalProvider } from "@ethersproject/providers";
 import { EthereumWebAuth, getAccountId } from "@didtools/pkh-ethereum";
 import { CeramicClient } from "@ceramicnetwork/http-client";
 import { DIDDataStore } from "@glazed/did-datastore";
@@ -34,7 +33,6 @@ import {
 } from "./interface/eip712.js";
 import { VerifiableMembershipSubject } from "./__generated__/types/VerifiableMembershipSubjectCredential";
 import { EventAttendance } from "./__generated__/types/EventAttendanceVerifiableCredential";
-import { ethers } from "ethers";
 import {
   AuthResponse,
   BaseVESS,
@@ -44,7 +42,8 @@ import {
 import { issueEventAttendancesParam } from "./utils/backupDataStoreHelper.js";
 
 export class VESS extends BaseVESS {
-  provider = undefined as Web3Provider | undefined;
+  provider = undefined as any | undefined;
+  account = undefined as string | undefined;
 
   constructor(
     env: "mainnet" | "testnet-clay" = "mainnet",
@@ -54,7 +53,7 @@ export class VESS extends BaseVESS {
   }
 
   connect = async (
-    provider?: ExternalProvider,
+    provider?: any,
     env: "mainnet" | "testnet-clay" = "mainnet"
   ): Promise<AuthResponse> => {
     this.dataModel = getDataModel(env);
@@ -76,10 +75,11 @@ export class VESS extends BaseVESS {
       );
     }
 
-    this.provider = new ethers.providers.Web3Provider(provider, 1);
+    this.provider = provider;
+    let accounts: string[] = [];
     try {
       if (!isMobileOrTablet()) {
-        await safeSend(this.provider, "eth_requestAccounts", []);
+        accounts = await safeSend(this.provider, "eth_accounts", []);
       }
     } catch (e) {
       console.log(e);
@@ -87,16 +87,15 @@ export class VESS extends BaseVESS {
         `Error enabling Ethereum provider. Message: ${JSON.stringify(e)}`
       );
     }
-    const signer = this.provider.getSigner();
-    const account = (await signer.getAddress()).toLowerCase();
+    this.account = accounts[0];
 
     try {
       const accountId = await getAccountId(
-        this.provider.provider,
-        account.toLowerCase()
+        this.provider,
+        this.account.toLowerCase()
       );
       const authMethod = await EthereumWebAuth.getAuthMethod(
-        this.provider.provider,
+        this.provider,
         accountId
       );
       const session = await loadSession(authMethod);
@@ -162,6 +161,7 @@ export class VESS extends BaseVESS {
         streamId: docUrl,
       };
     } catch (error) {
+      console.log(error);
       return {
         status: 300,
         error: error,
