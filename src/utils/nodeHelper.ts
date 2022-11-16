@@ -29,7 +29,7 @@ const createTempCACAO = async (
 ): Promise<Cacao> => {
   const accountId = new AccountId({
     chainId: "eip155:1",
-    address: address,
+    address: address.toLowerCase(),
   });
   const VERSION = "1";
   const now = new Date();

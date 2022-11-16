@@ -49,6 +49,12 @@ import { Event } from "./__generated__/types/Event";
 export const PROD_CERAMIC_URL = "https://prod.cvoxelceramic.com/";
 export const TESTNET_CERAMIC_URL = "https://ceramic-clay.3boxlabs.com";
 
+export type AuthResponse = {
+  session: DIDSession;
+  ceramic: CeramicClient;
+  env: "mainnet" | "testnet-clay";
+};
+
 export class BaseVESS {
   ceramic = undefined as CeramicClient | undefined;
   dataModel = getDataModel() as ModelTypesToAliases<ModelTypes>;
@@ -932,5 +938,40 @@ export class BaseVESS {
         result: "Failed to Delete Work Credential",
       };
     }
+  };
+
+  // ============================== For internal use ==============================
+
+  getHeldWorkCredentialStreamIds = async (did?: string): Promise<string[]> => {
+    if (!did || !this.dataModel) return [];
+    const ceramic = this.ceramic || new CeramicClient(this.ceramicUrl);
+    const dataStore =
+      this.dataStore || new DIDDataStore({ ceramic, model: this.dataModel });
+    const HeldWorkCredentials = await dataStore.get<
+      "heldWorkCredentials",
+      HeldWorkCredentials
+    >("heldWorkCredentials", did);
+    return !HeldWorkCredentials?.held ? [] : HeldWorkCredentials?.held;
+  };
+
+  getHeldEventAttendanceVerifiableCredentialStreamIds = async (
+    did?: string
+  ): Promise<string[]> => {
+    const ceramic = this.ceramic || new CeramicClient(this.ceramicUrl);
+    const pkhDid = did || this.ceramic?.did?.parent;
+    const dataStore =
+      this.dataStore ||
+      new DIDDataStore({
+        ceramic: ceramic,
+        model: this.dataModel,
+        id: pkhDid,
+      });
+    const HeldEventAttendanceVerifiableCredentials = await dataStore.get<
+      "HeldEventAttendanceVerifiableCredentials",
+      HeldEventAttendanceVerifiableCredentials
+    >("HeldEventAttendanceVerifiableCredentials", pkhDid);
+    return !HeldEventAttendanceVerifiableCredentials?.held
+      ? []
+      : HeldEventAttendanceVerifiableCredentials?.held;
   };
 }

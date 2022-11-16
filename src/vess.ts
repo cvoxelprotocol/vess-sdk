@@ -35,8 +35,12 @@ import {
 import { VerifiableMembershipSubject } from "./__generated__/types/VerifiableMembershipSubjectCredential";
 import { EventAttendance } from "./__generated__/types/EventAttendanceVerifiableCredential";
 import { ethers } from "ethers";
-import { DIDSession } from "did-session";
-import { BaseVESS, PROD_CERAMIC_URL, TESTNET_CERAMIC_URL } from "./baseVess.js";
+import {
+  AuthResponse,
+  BaseVESS,
+  PROD_CERAMIC_URL,
+  TESTNET_CERAMIC_URL,
+} from "./baseVess.js";
 import { issueEventAttendancesParam } from "./utils/backupDataStoreHelper.js";
 
 export class VESS extends BaseVESS {
@@ -52,7 +56,7 @@ export class VESS extends BaseVESS {
   connect = async (
     provider?: ExternalProvider,
     env: "mainnet" | "testnet-clay" = "mainnet"
-  ): Promise<DIDSession> => {
+  ): Promise<AuthResponse> => {
     this.dataModel = getDataModel(env);
     this.env = env;
     this.ceramicUrl =
@@ -84,10 +88,13 @@ export class VESS extends BaseVESS {
       );
     }
     const signer = this.provider.getSigner();
-    const account = await signer.getAddress();
+    const account = (await signer.getAddress()).toLowerCase();
 
     try {
-      const accountId = await getAccountId(this.provider.provider, account);
+      const accountId = await getAccountId(
+        this.provider.provider,
+        account.toLowerCase()
+      );
       const authMethod = await EthereumWebAuth.getAuthMethod(
         this.provider.provider,
         accountId
@@ -102,7 +109,7 @@ export class VESS extends BaseVESS {
         id: this.ceramic?.did?.parent,
       });
       console.log(`ceramic authorized! env: ${this.env}`);
-      return session;
+      return { session: this.session, ceramic: this.ceramic, env: this.env };
     } catch (e) {
       console.log(e);
       throw new Error("Error authorizing DID session.");

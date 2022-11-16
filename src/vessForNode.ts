@@ -40,11 +40,11 @@ export class VessForNode extends BaseVESS {
     this.env = env;
     this.ceramicUrl =
       this.env === "mainnet" ? PROD_CERAMIC_URL : TESTNET_CERAMIC_URL;
-    const account = await signer.getAddress();
+    const account = (await signer.getAddress()).toLowerCase();
 
     try {
       const authMethod = await getTempAuthMethod(
-        account,
+        account.toLowerCase(),
         "app.vess.id",
         signer
       );

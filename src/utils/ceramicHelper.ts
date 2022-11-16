@@ -72,11 +72,19 @@ export const updateTileDocument = async <T>(
 
 export const getPkhDIDFromAddress = (address: string): string => {
   if (isEthereumAddress(address)) {
-    return `did:pkh:${ETH_CHAIN_ID}${address}`;
+    return `did:pkh:${ETH_CHAIN_ID}${address.toLowerCase()}`;
   } else {
-    return address;
+    return address.toLowerCase();
   }
 };
+export const getAddressFromPkh = (did: string): string => {
+  if (isDIDstring(did)) {
+    return did.replace(`did:pkh:${ETH_CHAIN_ID}`, "");
+  } else {
+    return did;
+  }
+};
+
 export function isEthereumAddress(address: string): boolean {
   return /^0x[0-9a-f]{40}$/i.test(address);
 }
@@ -108,7 +116,7 @@ export function formatDID(did: string, maxLength = 20): string {
 export const loadSession = async (
   authMethod: AuthMethod
 ): Promise<DIDSession> => {
-  const sessionStr = localStorage.getItem("didsession");
+  const sessionStr = localStorage.getItem("ceramic-session");
   let session;
 
   if (sessionStr) {
@@ -120,11 +128,11 @@ export const loadSession = async (
       resources: ["ceramic://*"],
       expiresInSecs: 60 * 60 * 24 * 90,
     });
-    localStorage.setItem("didsession", session.serialize());
+    localStorage.setItem("ceramic-session", session.serialize());
   }
   return session;
 };
 
 export const removeSession = () => {
-  localStorage.removeItem("didsession");
+  localStorage.removeItem("ceramic-session");
 };

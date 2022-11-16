@@ -142,7 +142,7 @@ export const createVerifiableMembershipSubjectCredential = async (
     },
     credentialSubject: membershipSubject,
     credentialSchema: {
-      id: EVENT_ATTENDANCE_SCHEMA,
+      id: MEMBERSHIP_SUBJECT_SCHEMA,
       type: "Eip712SchemaValidator2021",
     },
     issuanceDate: new Date(issuanceDate).toISOString(),
@@ -193,7 +193,7 @@ export const createEventAttendanceCredential = async (
     },
     credentialSubject: eventAttendance,
     credentialSchema: {
-      id: MEMBERSHIP_SUBJECT_SCHEMA,
+      id: EVENT_ATTENDANCE_SCHEMA,
       type: "Eip712SchemaValidator2021",
     },
     issuanceDate: new Date(issuanceDate).toISOString(),
@@ -217,6 +217,27 @@ export const createEventAttendanceCredential = async (
     }
   );
   return vc as EventAttendanceVerifiableCredential;
+};
+
+export const verifyWorkCredential = async (
+  work: WorkCredential,
+  signer: string,
+  proofValue: string
+): Promise<boolean> => {
+  const domain = getDefaultDomainTypedData(WORK_DOMAIN_NAME);
+  const credentialTypedData = getEIP712WorkSubjectTypedData(
+    domain,
+    work.subject
+  );
+  const recoveredAddress = recoverTypedSignature({
+    data: credentialTypedData,
+    signature: proofValue,
+    version: SignTypedDataVersion.V4,
+  });
+  return (
+    utils.getAddress(signer.toLowerCase()) ===
+    utils.getAddress(recoveredAddress.toLowerCase())
+  );
 };
 
 export const verifyEventAttendanceCredential = async (
@@ -322,7 +343,10 @@ export const verifyEIP712Credential = async (
     credentialSubjectTypes
   );
   const recoveredAddress = await verifyTypedData(data, proofValue);
-  return utils.getAddress(issuer) === utils.getAddress(recoveredAddress);
+  return (
+    utils.getAddress(issuer.toLowerCase()) ===
+    utils.getAddress(recoveredAddress.toLowerCase())
+  );
 };
 
 const getDefaultDomainTypedData = (name: string): EIP712DomainTypedData => {
