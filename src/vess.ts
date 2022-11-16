@@ -11,7 +11,7 @@ import {
   loadSession,
   removeSession,
 } from "./utils/ceramicHelper.js";
-import { convertDateToTimestampStr, isMobileOrTablet } from "./utils/common.js";
+import { convertDateToTimestampStr } from "./utils/common.js";
 import {
   createEIP712WorkCredential,
   createEventAttendanceCredential,
@@ -78,9 +78,7 @@ export class VESS extends BaseVESS {
     this.provider = provider;
     let accounts: string[] = [];
     try {
-      if (!isMobileOrTablet()) {
-        accounts = await safeSend(this.provider, "eth_accounts", []);
-      }
+      accounts = await safeSend(this.provider, "eth_accounts", []);
     } catch (e) {
       console.log(e);
       throw new Error(
