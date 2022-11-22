@@ -901,6 +901,36 @@ export class BaseVESS {
     }
   };
 
+  /**
+   * Update Event
+   * @param id
+   * @param newItem
+   * @returns
+   */
+  updateEvent = async (id: string, newItem: Event): Promise<BaseResponse> => {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.backupDataStore) {
+      return {
+        status: 300,
+        result: "You need to call connect first",
+      };
+    }
+    try {
+      const doc = await TileDocument.load<Event>(this.ceramic, id);
+      if (!doc.content) throw new Error(`No Item Found: ${id}`);
+      await doc.update(newItem);
+      await this.backupDataStore.uploadEvent({ ...newItem, ceramicId: id });
+      return {
+        status: 200,
+      };
+    } catch (error) {
+      return {
+        status: 300,
+        error: error,
+        result: "Failed to Update Event",
+      };
+    }
+  };
+
   // ============================== Delete ==============================
 
   /**
