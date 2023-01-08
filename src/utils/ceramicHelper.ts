@@ -136,3 +136,12 @@ export const loadSession = async (
 export const removeSession = () => {
   localStorage.removeItem("ceramic-session");
 };
+
+export const hasAuthorizedSession = async () => {
+  const sessionStr = localStorage.getItem("ceramic-session");
+  if (sessionStr) {
+    const session = await DIDSession.fromSession(sessionStr);
+    return session && session.isAuthorized();
+  }
+  return false;
+};

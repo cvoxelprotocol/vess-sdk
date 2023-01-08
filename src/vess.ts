@@ -40,6 +40,13 @@ import {
   TESTNET_CERAMIC_URL,
 } from "./baseVess.js";
 import { issueEventAttendancesParam } from "./utils/backupDataStoreHelper.js";
+import { DIDSession } from "did-session";
+
+export type IsAuthentificatedProps = {
+  isAuthentificated: boolean;
+  session?: DIDSession;
+  did?: string;
+};
 
 export class VESS extends BaseVESS {
   provider = undefined as any | undefined;
@@ -118,6 +125,14 @@ export class VESS extends BaseVESS {
     this.session = undefined;
     this.dataStore = undefined;
     this.ceramic = undefined;
+  };
+
+  isAuthenticated = (): IsAuthentificatedProps => {
+    return {
+      isAuthentificated: !!this.session,
+      session: this.session,
+      did: this.ceramic?.did?.parent,
+    };
   };
 
   // ============================== Issue ==============================
@@ -234,7 +249,6 @@ export class VESS extends BaseVESS {
       };
     }
     try {
-      // TODO: sign and create verifiable credential before save data
       const vc = await createEventAttendanceCredential(content, this.provider);
 
       const doc = await createTileDocument<EventAttendanceVerifiableCredential>(
