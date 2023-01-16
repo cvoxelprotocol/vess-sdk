@@ -2,12 +2,12 @@ import {
   CustomResponse,
   EventAttendanceWithId,
   MembershipSubjectWithId,
-  WorkCredentialWithId,
+  WorkCredentialWithId
 } from "./interface/index.js";
 import {
   createTileDocument,
   getDataModel,
-  getSchema,
+  getSchema
 } from "./utils/ceramicHelper.js";
 
 import { CeramicClient } from "@ceramicnetwork/http-client";
@@ -15,7 +15,7 @@ import { DIDDataStore } from "@glazed/did-datastore";
 import { WorkCredential } from "./__generated__/types/WorkCredential";
 import {
   EventAttendanceVerifiableCredential,
-  VerifiableMembershipSubjectCredential,
+  VerifiableMembershipSubjectCredential
 } from "./interface/eip712.js";
 import { ethers } from "ethers";
 import { DIDSession } from "did-session";
@@ -23,7 +23,7 @@ import { getTempAuthMethod } from "./utils/nodeHelper.js";
 import { PROD_CERAMIC_URL, TESTNET_CERAMIC_URL, BaseVESS } from "./baseVess.js";
 
 export class VessForNode extends BaseVESS {
-  signer = undefined as ethers.Wallet | undefined;
+  signer = undefined as ethers.Signer | undefined;
 
   constructor(
     env: "mainnet" | "testnet-clay" = "mainnet",
@@ -33,7 +33,7 @@ export class VessForNode extends BaseVESS {
   }
 
   connect = async (
-    signer: ethers.Wallet,
+    signer: ethers.Signer,
     env: "mainnet" | "testnet-clay" = "mainnet"
   ): Promise<DIDSession> => {
     this.dataModel = getDataModel(env);
@@ -50,7 +50,7 @@ export class VessForNode extends BaseVESS {
       );
 
       const session = await DIDSession.authorize(authMethod, {
-        resources: ["ceramic://*"],
+        resources: ["ceramic://*"]
       });
       this.session = session;
       this.ceramic = new CeramicClient(this.ceramicUrl);
@@ -58,7 +58,7 @@ export class VessForNode extends BaseVESS {
       this.dataStore = new DIDDataStore({
         ceramic: this.ceramic,
         model: this.dataModel,
-        id: this.ceramic?.did?.parent,
+        id: this.ceramic?.did?.parent
       });
       console.log(`ceramic authorized! env: ${this.env}`);
       return session;
@@ -93,7 +93,7 @@ export class VessForNode extends BaseVESS {
       return {
         status: 300,
         result: "You need to call connect first",
-        streamId: undefined,
+        streamId: undefined
       };
     }
     try {
@@ -105,14 +105,14 @@ export class VessForNode extends BaseVESS {
       await Promise.all([setHeldWC, uploadBackup]);
       return {
         status: 200,
-        streamId: docUrl,
+        streamId: docUrl
       };
     } catch (error) {
       return {
         status: 300,
         error: error,
         result: "Failed to Issue Work Credential",
-        streamId: undefined,
+        streamId: undefined
       };
     }
   };
@@ -129,19 +129,20 @@ export class VessForNode extends BaseVESS {
       return {
         status: 300,
         result: "You need to call connect first",
-        streamId: undefined,
+        streamId: undefined
       };
     }
 
     try {
-      const doc =
-        await createTileDocument<VerifiableMembershipSubjectCredential>(
-          this.ceramic,
-          this.ceramic?.did?.parent,
-          vc,
-          getSchema(this.dataModel, "VerifiableMembershipSubjectCredential"),
-          ["vess", "membershipCredential"]
-        );
+      const doc = await createTileDocument<
+        VerifiableMembershipSubjectCredential
+      >(
+        this.ceramic,
+        this.ceramic?.did?.parent,
+        vc,
+        getSchema(this.dataModel, "VerifiableMembershipSubjectCredential"),
+        ["vess", "membershipCredential"]
+      );
       const docUrl = doc.id.toUrl();
       const val: MembershipSubjectWithId = { ...vc, ceramicId: docUrl };
       const setOrgs = this.setIssuedMembershipSubjects(docUrl);
@@ -149,14 +150,14 @@ export class VessForNode extends BaseVESS {
       await Promise.all([setOrgs, uploadBackup]);
       return {
         status: 200,
-        streamId: docUrl,
+        streamId: docUrl
       };
     } catch (error) {
       return {
         status: 300,
         error: error,
         result: "Failed to Issue Work Credential",
-        streamId: undefined,
+        streamId: undefined
       };
     }
   };
@@ -173,7 +174,7 @@ export class VessForNode extends BaseVESS {
       return {
         status: 300,
         result: "You need to call connect first",
-        docs: [],
+        docs: []
       };
     }
     try {
@@ -183,20 +184,21 @@ export class VessForNode extends BaseVESS {
         docsPromises.push(docPromise);
       }
       const docs = await Promise.all(docsPromises);
-      const docUrls = docs.map((doc) => doc.ceramicId);
-      const setIssued =
-        this.setIssuedEventAttendanceVerifiableCredentials(docUrls);
+      const docUrls = docs.map(doc => doc.ceramicId);
+      const setIssued = this.setIssuedEventAttendanceVerifiableCredentials(
+        docUrls
+      );
       await Promise.all([setIssued]);
       return {
         status: 200,
-        docs,
+        docs
       };
     } catch (error) {
       return {
         status: 300,
         error: error,
         result: "Failed to Issue Work Credential",
-        docs: [],
+        docs: []
       };
     }
   };

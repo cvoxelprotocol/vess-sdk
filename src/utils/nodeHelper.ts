@@ -6,7 +6,7 @@ import {
   Cacao,
   SiweMessage,
   AuthMethodOpts,
-  AuthMethod,
+  AuthMethod
 } from "@didtools/cacao";
 import { randomString } from "@stablelib/random";
 
@@ -14,7 +14,7 @@ import { randomString } from "@stablelib/random";
 export const getTempAuthMethod = async (
   address: string,
   appName: string,
-  signer: ethers.Wallet
+  signer: ethers.Signer
 ): Promise<AuthMethod> => {
   return async (opts: AuthMethodOpts): Promise<Cacao> => {
     opts.domain = appName;
@@ -25,11 +25,11 @@ export const getTempAuthMethod = async (
 const createTempCACAO = async (
   opts: AuthMethodOpts,
   address: string,
-  signer: ethers.Wallet
+  signer: ethers.Signer
 ): Promise<Cacao> => {
   const accountId = new AccountId({
     chainId: "eip155:1",
-    address: address.toLowerCase(),
+    address: address.toLowerCase()
   });
   const VERSION = "1";
   const now = new Date();
@@ -49,7 +49,7 @@ const createTempCACAO = async (
     issuedAt: now.toISOString(),
     expirationTime: opts.expirationTime ?? oneDayLater.toISOString(),
     chainId: accountId.chainId.reference,
-    resources: opts.resources,
+    resources: opts.resources
   });
 
   const signature = await signer.signMessage(siweMessage.signMessage());
