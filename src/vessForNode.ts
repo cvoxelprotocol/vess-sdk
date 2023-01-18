@@ -22,10 +22,9 @@ import {
   IssuedEventAttendanceVerifiableCredentials,
   IssuedVerifiableMembershipSubjects,
 } from "./__generated__/index.js";
+import { SignSIWE } from "./interface/kms.js";
 
 export class VessForNode extends BaseVESS {
-  signer = undefined as ethers.Wallet | undefined;
-
   constructor(
     env: "mainnet" | "testnet-clay" = "mainnet",
     ceramic?: CeramicClient
@@ -34,7 +33,7 @@ export class VessForNode extends BaseVESS {
   }
 
   connect = async (
-    signer: ethers.Wallet,
+    signer: ethers.Signer,
     env: "mainnet" | "testnet-clay" = "mainnet"
   ): Promise<DIDSession> => {
     this.dataModel = getDataModel(env);
@@ -45,9 +44,46 @@ export class VessForNode extends BaseVESS {
 
     try {
       const authMethod = await getTempAuthMethod(
+        account,
+        "app.vess.id",
+        async (message: string) => {
+          return await signer.signMessage(message);
+        }
+      );
+
+      const session = await DIDSession.authorize(authMethod, {
+        resources: ["ceramic://*"],
+      });
+      this.session = session;
+      this.ceramic = new CeramicClient(this.ceramicUrl);
+      this.ceramic.did = this.session.did;
+      this.dataStore = new DIDDataStore({
+        ceramic: this.ceramic,
+        model: this.dataModel,
+        id: this.ceramic?.did?.parent,
+      });
+      console.log(`ceramic authorized! env: ${this.env}`);
+      return session;
+    } catch (e) {
+      console.log(e);
+      throw new Error("Error authorizing DID session.");
+    }
+  };
+  connectWithKMS = async (
+    account: string,
+    signSIWE: SignSIWE,
+    env: "mainnet" | "testnet-clay" = "mainnet"
+  ): Promise<DIDSession> => {
+    this.dataModel = getDataModel(env);
+    this.env = env;
+    this.ceramicUrl =
+      this.env === "mainnet" ? PROD_CERAMIC_URL : TESTNET_CERAMIC_URL;
+
+    try {
+      const authMethod = await getTempAuthMethod(
         account.toLowerCase(),
         "app.vess.id",
-        signer
+        signSIWE
       );
 
       const session = await DIDSession.authorize(authMethod, {

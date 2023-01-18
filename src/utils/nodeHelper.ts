@@ -9,23 +9,24 @@ import {
   AuthMethod,
 } from "@didtools/cacao";
 import { randomString } from "@stablelib/random";
+import { SignSIWE } from "../interface/kms";
 
 // temporary solution for using in backend
 export const getTempAuthMethod = async (
   address: string,
   appName: string,
-  signer: ethers.Wallet
+  signSIWE: SignSIWE
 ): Promise<AuthMethod> => {
   return async (opts: AuthMethodOpts): Promise<Cacao> => {
     opts.domain = appName;
-    return createTempCACAO(opts, address, signer);
+    return createTempCACAO(opts, address, signSIWE);
   };
 };
 
 const createTempCACAO = async (
   opts: AuthMethodOpts,
   address: string,
-  signer: ethers.Wallet
+  signSIWE: SignSIWE
 ): Promise<Cacao> => {
   const accountId = new AccountId({
     chainId: "eip155:1",
@@ -51,8 +52,7 @@ const createTempCACAO = async (
     chainId: accountId.chainId.reference,
     resources: opts.resources,
   });
-
-  const signature = await signer.signMessage(siweMessage.signMessage());
+  const signature = await signSIWE(siweMessage.signMessage());
   siweMessage.signature = signature;
   return Cacao.fromSiweMessage(siweMessage);
 };
