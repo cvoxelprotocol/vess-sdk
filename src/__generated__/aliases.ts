@@ -20,11 +20,11 @@ export const aliases = {
       "kjzl6cwe1jw145rb52cffnykjia416rj2a8xn9wmxrschk3b3scsfuozeskr015",
     MemberShip:
       "kjzl6cwe1jw146atvl5hmaii1dwgy5o1vqu5xepmnvzdkqd6958f6azviyrvlqk",
-    Organization:
+    OldOrganization:
       "kjzl6cwe1jw14afrtvkjgefqwmalj9l5ckmhafhaqtpoxajvgg5kg2fgvyp5wxn",
     MembershipSubject:
       "kjzl6cwe1jw1497pei4dttpf4z62460m1rtk8r74q7lh830qby3155pt8j36euv",
-    CreatedOrganizations:
+    CreatedOldOrganizations:
       "kjzl6cwe1jw148ipsz4jom0otbh99u2tsl8rqgq29pndfgu1fyfnenwwxyvq9ck",
     CreatedMemberships:
       "kjzl6cwe1jw145pnoeu7d2q0v8wnqchk7jynugmbzamb1rynxj8o54747n7crkh",
@@ -45,6 +45,10 @@ export const aliases = {
       "kjzl6cwe1jw147bujmswrzoavcpzs5lx8si6rqvho8fxwe0dukk6kqxowjn8g7j",
     HeldEventAttendanceVerifiableCredentials:
       "kjzl6cwe1jw1474zxyjg0hgf5mly1svo0hpmyxuh6w6h1juql0omovmj668l40m",
+    Organization:
+      "kjzl6cwe1jw149yugwzpoevb3oxxdjd3mcpn0hgh81sdizlj0gl7zrmhu44hos9",
+    CreatedOrganizations:
+      "kjzl6cwe1jw146kovdk3ytppdl6ml7l7tgbp34s2iogqciy3oyt8sz1jhj8mreb",
   },
   schemas: {
     BasicProfile:
@@ -65,7 +69,7 @@ export const aliases = {
       "ceramic://k3y52l7qbv1frycpcv49ocxdlbt766i94vaj4mpu6vv09dcplwmyd90gqsrzdzgn4",
     HeldVerifiableWorkCredentials:
       "ceramic://k3y52l7qbv1frxv33l9x19y93tso1k0uzc6seoah67bfj7gkybe1gd6aqx9556q68",
-    Organization:
+    OldOrganization:
       "ceramic://k3y52l7qbv1frxlarqwlxy7uozpo7hy6t3wyct3cv4ibscv2smxxfhsbx2labpedc",
     MemberShip:
       "ceramic://k3y52l7qbv1fry96pqami38jzufty7ovstaqis0jys0cuvn3zzqbwawbsxwpxheyo",
@@ -73,7 +77,7 @@ export const aliases = {
       "ceramic://k3y52l7qbv1frxox7068huf9wkllb4f714ppop3i1t8rfp0er5hgmmiv53j4tol4w",
     VerifiableMembershipSubjectCredential:
       "ceramic://k3y52l7qbv1frymj6nr0muv9q7yzcy0xot5rqlxpitpm8vrrskftr3q9di8iryps0",
-    CreatedOrganizations:
+    CreatedOldOrganizations:
       "ceramic://k3y52l7qbv1frymg9c9kprlm1xzkngqvxcfvfhww13imgdzvontgxnngrdmojt9ts",
     CreatedMemberships:
       "ceramic://k3y52l7qbv1fry2l5tl97xreladtpt6i6jsbn6ctoreluaa9215al9a9uv9pco0zk",
@@ -93,6 +97,10 @@ export const aliases = {
       "ceramic://k3y52l7qbv1fryl6zio60m4k1vmeubkjfg8g7x0r3hn52hlhr5osrbzo3x5ihprsw",
     HeldEventAttendanceVerifiableCredentials:
       "ceramic://k3y52l7qbv1frxn3jh07vqilq43cdexds5ghie25cyglv78ba41c2mz5itrk7usxs",
+    Organization:
+      "ceramic://k3y52l7qbv1frxqm01jbz7wsmr4vge7ahd4ebjw271v7u5fwg4jrik8xcehp68lj4",
+    CreatedOrganizations:
+      "ceramic://k3y52l7qbv1frynzm3x7t28n0sauv44tsrkosmjfk7cp5yonowlrhnba0oe5ct69s",
   },
   tiles: {},
 };

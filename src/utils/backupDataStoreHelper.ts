@@ -1,11 +1,21 @@
 import firebase, { initializeApp, getApps } from "firebase/app";
-import { Firestore, getFirestore } from "firebase/firestore/lite";
-import { Functions, getFunctions, httpsCallable } from "firebase/functions";
+import {
+  connectFirestoreEmulator,
+  Firestore,
+  getFirestore,
+} from "firebase/firestore/lite";
+import {
+  connectFunctionsEmulator,
+  Functions,
+  getFunctions,
+  httpsCallable,
+} from "firebase/functions";
 import {
   EventAttendanceWithId,
   EventWithId,
   MembershipSubjectWithId,
   MembershipWithId,
+  OldOrganizationWIthId,
   OrganizationWIthId,
   VerifiableWorkCredentialWithId,
   WorkCredentialWithId,
@@ -53,6 +63,9 @@ export class BackupDataStore {
     this.firestore = getFirestore(this.app);
     this.functions = getFunctions();
     this.functions.region = "us-central1";
+    // for dev use only
+    // connectFunctionsEmulator(this.functions, "localhost", 5111);
+    // connectFirestoreEmulator(this.firestore, "localhost", 8081);
   }
 
   uploadCRDL = (crdl: WorkCredentialWithId): Promise<{ [x: string]: string }> =>
@@ -65,7 +78,7 @@ export class BackupDataStore {
       uploadDraftFunc({
         crdl: {
           ...crdl,
-          backupId: removeCeramicPrefix(crdl.backupId),
+          ceramicId: removeCeramicPrefix(crdl.ceramicId),
           holderDid: crdl.subject.work?.id,
           potentialSigners: crdl.subject.tx?.relatedAddresses,
         },
@@ -112,6 +125,28 @@ export class BackupDataStore {
         { [x: string]: OrganizationWIthId },
         { [x: string]: string }
       >(this.functions, "uploadOrg");
+      uploadFunc({
+        org: param,
+      })
+        .then((result) => {
+          const { status } = result.data;
+          resolve({ status: status });
+        })
+        .catch((error) => {
+          console.log({ error });
+          reject(error);
+        });
+    });
+
+  uploadOldOrg = (
+    param: OldOrganizationWIthId
+  ): Promise<{ [x: string]: string }> =>
+    new Promise((resolve, reject) => {
+      if (!this.functions) return;
+      const uploadFunc = httpsCallable<
+        { [x: string]: OldOrganizationWIthId },
+        { [x: string]: string }
+      >(this.functions, "uploadOldOrg");
       uploadFunc({
         org: param,
       })

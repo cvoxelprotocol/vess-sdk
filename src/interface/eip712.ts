@@ -274,6 +274,8 @@ export interface CredentialStatus {
   type: string;
 }
 
+export type CredentialSubject = Extensible<{ id?: string }>;
+
 interface FixedCredentialPayload {
   "@context": string | string[];
   id: string;
@@ -281,9 +283,7 @@ interface FixedCredentialPayload {
   issuer: IssuerType;
   issuanceDate: DateType;
   expirationDate?: DateType;
-  credentialSubject: Extensible<{
-    id?: string;
-  }>;
+  credentialSubject: CredentialSubject;
   credentialStatus?: CredentialStatus;
   evidence?: any;
   termsOfUse?: any;

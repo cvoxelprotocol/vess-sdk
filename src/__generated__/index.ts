@@ -11,6 +11,7 @@ export * from "./types/IssuedEvents.js";
 export * from "./types/IssuedVerifiableMembershipSubjects.js";
 export * from "./types/WorkCredential.js";
 export * from "./types/VerifiableWorkCredential.js";
+export * from "./types/OldOrganization.js";
 export * from "./types/Organization.js";
 export * from "./types/MembershipSubject.js";
 export * from "./types/MemberShip.js";

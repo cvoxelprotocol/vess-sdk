@@ -5,9 +5,9 @@ import {
   WorkCredentialWithId,
 } from "./interface/index.js";
 import {
-  createTileDocument,
+  createTileDoc,
   getDataModel,
-  getSchema,
+  setIDX,
   loadSession,
   removeSession,
 } from "./utils/ceramicHelper.js";
@@ -41,6 +41,11 @@ import {
 } from "./baseVess.js";
 import { issueEventAttendancesParam } from "./utils/backupDataStoreHelper.js";
 import { DIDSession } from "did-session";
+import {
+  HeldWorkCredentials,
+  IssuedEventAttendanceVerifiableCredentials,
+  IssuedVerifiableMembershipSubjects,
+} from "./__generated__/index.js";
 
 export type IsAuthentificatedProps = {
   isAuthentificated: boolean;
@@ -163,15 +168,26 @@ export class VESS extends BaseVESS {
         content,
         this.provider
       );
-      const doc = await this.createWorkCredential(credential);
-      const docUrl = doc.id.toUrl();
-      const crdl: WorkCredentialWithId = { ...credential, backupId: docUrl };
-      const setHeldWC = this.setHeldWorkCredentials([docUrl]);
-      const uploadBackup = this.backupDataStore.uploadCRDL(crdl);
-      await Promise.all([setHeldWC, uploadBackup]);
+      const val: WorkCredentialWithId = await createTileDoc<WorkCredential>(
+        credential,
+        this.ceramic,
+        this.dataModel,
+        "WorkCredential",
+        ["vess", "workCredential"]
+      );
+      if (!val.ceramicId) throw new Error("falild to create credentail");
+      const storeIDX = setIDX<HeldWorkCredentials, "heldWorkCredentials">(
+        [val.ceramicId],
+        this.ceramic,
+        this.dataStore,
+        "heldWorkCredentials",
+        "held"
+      );
+      const uploadBackup = this.backupDataStore.uploadCRDL(val);
+      await Promise.all([storeIDX, uploadBackup]);
       return {
         status: 200,
-        streamId: docUrl,
+        streamId: val.ceramicId,
       };
     } catch (error) {
       console.log(error);
@@ -206,22 +222,30 @@ export class VESS extends BaseVESS {
         content,
         this.provider
       );
-      const doc =
-        await createTileDocument<VerifiableMembershipSubjectCredential>(
-          this.ceramic,
-          this.ceramic?.did?.parent,
+      const val: MembershipSubjectWithId =
+        await createTileDoc<VerifiableMembershipSubjectCredential>(
           vc,
-          getSchema(this.dataModel, "VerifiableMembershipSubjectCredential"),
+          this.ceramic,
+          this.dataModel,
+          "VerifiableMembershipSubjectCredential",
           ["vess", "membershipCredential"]
         );
-      const docUrl = doc.id.toUrl();
-      const val: MembershipSubjectWithId = { ...vc, ceramicId: docUrl };
-      const setOrgs = this.setIssuedMembershipSubjects(docUrl);
+      const storeIDX = setIDX<
+        IssuedVerifiableMembershipSubjects,
+        "IssuedVerifiableMembershipSubjects"
+      >(
+        [val.ceramicId],
+        this.ceramic,
+        this.dataStore,
+        "IssuedVerifiableMembershipSubjects",
+        "issued"
+      );
+
       const uploadBackup = this.backupDataStore.uploadMembershipSubject(val);
-      await Promise.all([setOrgs, uploadBackup]);
+      await Promise.all([storeIDX, uploadBackup]);
       return {
         status: 200,
-        streamId: docUrl,
+        streamId: val.ceramicId,
       };
     } catch (error) {
       return {
@@ -251,23 +275,29 @@ export class VESS extends BaseVESS {
     try {
       const vc = await createEventAttendanceCredential(content, this.provider);
 
-      const doc = await createTileDocument<EventAttendanceVerifiableCredential>(
+      const val: EventAttendanceWithId =
+        await createTileDoc<EventAttendanceVerifiableCredential>(
+          vc,
+          this.ceramic,
+          this.dataModel,
+          "EventAttendanceVerifiableCredential",
+          ["vess", "eventAttendanceCredential"]
+        );
+      const storeIDX = setIDX<
+        IssuedEventAttendanceVerifiableCredentials,
+        "IssuedEventAttendanceVerifiableCredentials"
+      >(
+        [val.ceramicId],
         this.ceramic,
-        this.ceramic?.did?.parent,
-        vc,
-        getSchema(this.dataModel, "EventAttendanceVerifiableCredential"),
-        ["vess", "eventAttendanceCredential"]
+        this.dataStore,
+        "IssuedEventAttendanceVerifiableCredentials",
+        "issued"
       );
-      const docUrl = doc.id.toUrl();
-      const val: EventAttendanceWithId = { ...vc, ceramicId: docUrl };
-      const setIssued = this.setIssuedEventAttendanceVerifiableCredentials([
-        docUrl,
-      ]);
       const uploadBackup = this.backupDataStore.uploadEventAttendance(val);
-      await Promise.all([setIssued, uploadBackup]);
+      await Promise.all([storeIDX, uploadBackup]);
       return {
         status: 200,
-        streamId: docUrl,
+        streamId: val.ceramicId,
       };
     } catch (error) {
       return {
@@ -309,7 +339,7 @@ export class VESS extends BaseVESS {
       },
       updatedAt: nowTimestamp,
     };
-    await this.backupDataStore.uploadCRDL({ ...crdl, backupId: id });
+    await this.backupDataStore.uploadCRDL({ ...crdl, ceramicId: id });
     return crdl;
   };
 

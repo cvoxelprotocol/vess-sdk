@@ -16,12 +16,14 @@ import { IssuedEvents } from "../__generated__/types/IssuedEvents";
 import { IssuedVerifiableMembershipSubjects } from "../__generated__/types/IssuedVerifiableMembershipSubjects";
 import { Membership } from "../__generated__/types/MemberShip";
 import { MembershipSubject } from "../__generated__/types/MembershipSubject";
+import { OldOrganization } from "../__generated__/types/OldOrganization";
 import { Organization } from "../__generated__/types/Organization";
 import {
   DeliverableItem,
   VerifiableWorkCredential,
 } from "../__generated__/types/VerifiableWorkCredential";
 import { WorkCredential } from "../__generated__/types/WorkCredential";
+import { CreatedOldOrganizations } from "../__generated__/types/CreatedOldOrganizations";
 
 export type OldWorkCredential = {
   to: string; // payee address. maybe contract address
@@ -73,33 +75,37 @@ export type OldWorkCredentials = {
 };
 
 export type WorkCredentialWithId = WorkCredential & {
-  backupId?: string;
+  ceramicId?: string;
   holderDid?: string;
   potentialSigners?: string[];
 };
 
-export type OrganizationWIthId = Organization & {
+export type WithCeramicId<T> = T & {
   ceramicId: string;
 };
 
-export type MembershipWithId = Membership & {
-  ceramicId: string;
+export type BaseIDXType = {
+  created?: string[];
+  issued?: string[];
+  held?: string[];
+  [k: string]: unknown;
 };
 
-export type VerifiableWorkCredentialWithId = VerifiableWorkCredential & {
-  ceramicId: string;
-};
-export type MembershipSubjectWithId = VerifiableMembershipSubjectCredential & {
-  ceramicId: string;
-};
+export type OrganizationWIthId = WithCeramicId<Organization>;
 
-export type EventAttendanceWithId = EventAttendanceVerifiableCredential & {
-  ceramicId: string;
-};
+export type OldOrganizationWIthId = WithCeramicId<OldOrganization>;
 
-export type EventWithId = Event & {
-  ceramicId: string;
-};
+export type MembershipWithId = WithCeramicId<Membership>;
+
+export type VerifiableWorkCredentialWithId =
+  WithCeramicId<VerifiableWorkCredential>;
+export type MembershipSubjectWithId =
+  WithCeramicId<VerifiableMembershipSubjectCredential>;
+
+export type EventAttendanceWithId =
+  WithCeramicId<EventAttendanceVerifiableCredential>;
+
+export type EventWithId = WithCeramicId<Event>;
 
 export type ModelTypes = ModelTypeAliases<
   {
@@ -123,6 +129,8 @@ export type ModelTypes = ModelTypeAliases<
     VerifiableMembershipSubjectCredential: VerifiableMembershipSubjectCredential;
     HeldVerifiableMembershipSubjects: HeldVerifiableMembershipSubjects;
     IssuedVerifiableMembershipSubjects: IssuedVerifiableMembershipSubjects;
+    OldOrganization: OldOrganization;
+    CreatedOldOrganizations: CreatedOldOrganizations;
   },
   {
     workCredential: "WorkCredential";
@@ -145,6 +153,8 @@ export type ModelTypes = ModelTypeAliases<
     VerifiableMembershipSubjectCredential: "VerifiableMembershipSubjectCredential";
     HeldVerifiableMembershipSubjects: "HeldVerifiableMembershipSubjects";
     IssuedVerifiableMembershipSubjects: "IssuedVerifiableMembershipSubjects";
+    OldOrganization: "OldOrganization";
+    CreatedOldOrganizations: "CreatedOldOrganizations";
   }
 >;
 
@@ -172,8 +182,11 @@ const AliasType = {
     "VerifiableMembershipSubjectCredential",
   HeldVerifiableMembershipSubjects: "HeldVerifiableMembershipSubjects",
   IssuedVerifiableMembershipSubjects: "IssuedVerifiableMembershipSubjects",
+  OldOrganization: "OldOrganization",
+  CreatedOldOrganizations: "CreatedOldOrganizations",
 } as const;
 export type AliasTypes = typeof AliasType[keyof typeof AliasType];
+export type Alias = keyof ModelTypes["definitions"];
 
 export type BaseResponse = {
   status: 200 | 300;

@@ -2,10 +2,18 @@ import { CeramicClient } from "@ceramicnetwork/http-client";
 import { TileDocument } from "@ceramicnetwork/stream-tile";
 import { aliases as devModelAliases } from "../__generated__/aliases_dev.js";
 import { aliases as prodModelAliases } from "../__generated__/aliases.js";
-import { AliasTypes, ModelTypes } from "../interface/index.js";
+import {
+  Alias,
+  AliasTypes,
+  BaseIDXType,
+  ModelTypes,
+  WithCeramicId,
+} from "../interface/index.js";
 import { ModelTypesToAliases } from "@glazed/types";
 import type { AuthMethod } from "@didtools/cacao";
 import { DIDSession } from "did-session";
+import { DIDDataStore } from "@glazed/did-datastore";
+import { removeUndefinedFromArray } from "./common.js";
 
 export const ETH_CHAIN_ID = `eip155:1:`;
 
@@ -21,6 +29,126 @@ export const getSchema = (
   alias: AliasTypes
 ): string => {
   return dataModel.schemas[alias];
+};
+
+export const createTileDoc = async <T>(
+  content: T,
+  ceramic: CeramicClient | undefined,
+  dataModel: ModelTypesToAliases<ModelTypes>,
+  modelName: AliasTypes,
+  tags: string[],
+  family?: string
+): Promise<WithCeramicId<T>> => {
+  if (!ceramic || !ceramic?.did?.parent) {
+    throw new Error("You need to call connect first");
+  }
+  try {
+    const doc = await createTileDocument<T>(
+      ceramic,
+      ceramic?.did?.parent,
+      content,
+      getSchema(dataModel, modelName),
+      tags,
+      family
+    );
+    const docUrl = doc.id.toUrl();
+    return { ...content, ceramicId: docUrl };
+  } catch (error) {
+    console.error(error);
+    throw new Error("Failed to Create Tile Doc");
+  }
+};
+
+export const setIDX = async <T extends BaseIDXType, K extends Alias>(
+  contentId: string[],
+  ceramic: CeramicClient | undefined,
+  dataStore: DIDDataStore<ModelTypes> | undefined,
+  modelName: K,
+  defautParamName: "issued" | "created" | "held"
+): Promise<void> => {
+  if (!dataStore || !ceramic?.did?.parent) {
+    throw new Error("You need to call connect first");
+  }
+  const val = await dataStore.get<K, T>(modelName, ceramic?.did?.parent);
+  const currentVals = val?.issued ?? val?.created ?? val?.held ?? [];
+  const updatedVals = [...currentVals, ...contentId];
+  if (defautParamName === "created") {
+    await dataStore.set(modelName, {
+      created: updatedVals,
+    });
+    return;
+  }
+  if (defautParamName === "issued") {
+    await dataStore.set(modelName, {
+      issued: updatedVals,
+    });
+    return;
+  }
+  if (defautParamName === "held") {
+    await dataStore.set(modelName, {
+      held: updatedVals,
+    });
+    return;
+  }
+};
+
+export const getTileDoc = async <T>(
+  streamId: string,
+  ceramic: CeramicClient
+): Promise<WithCeramicId<T>> => {
+  try {
+    const doc = await TileDocument.load<T>(ceramic, streamId);
+    return {
+      ...doc.content,
+      ceramicId: doc.id.toString(),
+    };
+  } catch (error) {
+    console.error(error);
+    throw new Error("Failed to Get Tile Doc");
+  }
+};
+
+export const getIDXDocs = async <T extends BaseIDXType, K extends Alias, U>(
+  ceramic: CeramicClient,
+  dataStore: DIDDataStore<ModelTypes>,
+  modelName: K,
+  did?: string
+): Promise<WithCeramicId<U>[]> => {
+  try {
+    if (!did) {
+      throw new Error("You need to call connect first");
+    }
+    const val = await dataStore.get<K, T>(modelName, did);
+    const idxs = val?.issued ?? val?.created ?? [];
+    if (idxs.length === 0) return [];
+    const arr: Promise<WithCeramicId<U> | undefined>[] = [];
+    for (const streamId of idxs) {
+      const o = getTileDoc<U>(streamId, ceramic);
+      arr.push(o);
+    }
+    const res = await Promise.all(arr);
+    return removeUndefinedFromArray<WithCeramicId<U>>(res);
+  } catch (error) {
+    console.error(error);
+    throw new Error("Failed to Get IDX");
+  }
+};
+
+export const updateTileDoc = async <T>(
+  ceramic: CeramicClient | undefined,
+  content: WithCeramicId<T>
+): Promise<void> => {
+  if (!ceramic || !ceramic?.did?.parent) {
+    throw new Error("You need to call connect first");
+  }
+  try {
+    const doc = await TileDocument.load<T>(ceramic, content.ceramicId);
+    if (!doc.content) throw new Error(`No Item Found: ${content.ceramicId}`);
+    await doc.update(content);
+  } catch (error) {
+    console.error(error);
+    throw new Error("Failed to Create Tile Doc");
+  }
 };
 
 export const createTileDocument = async <T>(
@@ -42,31 +170,6 @@ export const createTileDocument = async <T>(
   } catch (e) {
     console.log("Error creating TileDocument: ", e);
     throw new Error("Error creating TileDocument");
-  }
-};
-
-export const updateTileDocument = async <T>(
-  client: CeramicClient,
-  did: string,
-  streamId: string,
-  content: T,
-  schema: string,
-  tags: string[] = ["vess", "workCredential"],
-  family = "VESS"
-) => {
-  let doc;
-  try {
-    doc = await TileDocument.load(client, streamId);
-    await doc.update(content, {
-      family: family,
-      controllers: [did],
-      tags: tags,
-      schema: schema,
-    });
-
-    return doc.id.toUrl();
-  } catch (e) {
-    return null;
   }
 };
 
@@ -121,6 +224,7 @@ export const loadSession = async (
 
   if (sessionStr) {
     session = await DIDSession.fromSession(sessionStr);
+    // console.log("session from sessionStr", session);
   }
 
   if (!session || (session.hasSession && session.isExpired)) {
@@ -130,6 +234,7 @@ export const loadSession = async (
     });
     localStorage.setItem("ceramic-session", session.serialize());
   }
+  // console.log({ sessionStr });
   return session;
 };
 
