@@ -1,7 +1,10 @@
 import {
   CustomResponse,
   EventAttendanceWithId,
+  EventWithId,
   MembershipSubjectWithId,
+  MembershipWithId,
+  OrganizationWIthId,
   WorkCredentialWithId,
 } from "./interface/index.js";
 import { createTileDoc, getDataModel, setIDX } from "./utils/ceramicHelper.js";
@@ -10,7 +13,12 @@ import { CeramicClient } from "@ceramicnetwork/http-client";
 import { DIDDataStore } from "@glazed/did-datastore";
 import { WorkCredential } from "./__generated__/types/WorkCredential";
 import {
+  EIP712MessageTypes,
+  EIP712TypedData,
+  EventAttendance,
   EventAttendanceVerifiableCredential,
+  SignTypedData,
+  VerifiableMembershipSubject,
   VerifiableMembershipSubjectCredential,
 } from "./interface/eip712.js";
 import { ethers } from "ethers";
@@ -23,6 +31,8 @@ import {
   IssuedVerifiableMembershipSubjects,
 } from "./__generated__/index.js";
 import { SignSIWE } from "./interface/kms.js";
+import { createVerifiableCredential } from "./utils/credentialHelper.js";
+import { VESS_CREDENTIALS } from "./constants/verifiableCredentials.js";
 
 export class VessForNode extends BaseVESS {
   constructor(
@@ -31,45 +41,7 @@ export class VessForNode extends BaseVESS {
   ) {
     super(env, ceramic);
   }
-
   connect = async (
-    signer: ethers.Signer,
-    env: "mainnet" | "testnet-clay" = "mainnet"
-  ): Promise<DIDSession> => {
-    this.dataModel = getDataModel(env);
-    this.env = env;
-    this.ceramicUrl =
-      this.env === "mainnet" ? PROD_CERAMIC_URL : TESTNET_CERAMIC_URL;
-    const account = (await signer.getAddress()).toLowerCase();
-
-    try {
-      const authMethod = await getTempAuthMethod(
-        account,
-        "app.vess.id",
-        async (message: string) => {
-          return await signer.signMessage(message);
-        }
-      );
-
-      const session = await DIDSession.authorize(authMethod, {
-        resources: ["ceramic://*"],
-      });
-      this.session = session;
-      this.ceramic = new CeramicClient(this.ceramicUrl);
-      this.ceramic.did = this.session.did;
-      this.dataStore = new DIDDataStore({
-        ceramic: this.ceramic,
-        model: this.dataModel,
-        id: this.ceramic?.did?.parent,
-      });
-      console.log(`ceramic authorized! env: ${this.env}`);
-      return session;
-    } catch (e) {
-      console.log(e);
-      throw new Error("Error authorizing DID session.");
-    }
-  };
-  connectWithKMS = async (
     account: string,
     signSIWE: SignSIWE,
     env: "mainnet" | "testnet-clay" = "mainnet"
@@ -166,8 +138,12 @@ export class VessForNode extends BaseVESS {
   };
 
   issueMembershipSubject = async (
-    vc: VerifiableMembershipSubjectCredential
-  ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
+    org: OrganizationWIthId,
+    membership: MembershipWithId,
+    issuerAddress: string,
+    holderDids: string[],
+    signTypedData: SignTypedData<EIP712MessageTypes>
+  ): Promise<CustomResponse<{ docs: MembershipSubjectWithId[] }>> => {
     if (
       !this.ceramic ||
       !this.ceramic?.did?.parent ||
@@ -177,47 +153,77 @@ export class VessForNode extends BaseVESS {
       return {
         status: 300,
         result: "You need to call connect first",
-        streamId: undefined,
+        docs: [],
       };
     }
 
     try {
-      const val: MembershipSubjectWithId =
-        await createTileDoc<VerifiableMembershipSubjectCredential>(
+      const issuePromises: Promise<VerifiableMembershipSubjectCredential>[] =
+        [];
+      for (const did of holderDids) {
+        const content: VerifiableMembershipSubject = {
+          id: did,
+          organizationName: org.name,
+          organizationId: org.ceramicId,
+          organizationIcon: org.icon || "",
+          membershipName: membership.name,
+          membershipIcon: membership.icon || "",
+          membershipId: membership.ceramicId,
+        };
+        const credentialId = `${content.organizationId}-${content.membershipId}-${content.id}`;
+        const issuePromise =
+          createVerifiableCredential<VerifiableMembershipSubjectCredential>(
+            issuerAddress,
+            credentialId,
+            VESS_CREDENTIALS.EVENT_ATTENDANCE,
+            content,
+            signTypedData
+          );
+        issuePromises.push(issuePromise);
+      }
+      const vcs = await Promise.all(issuePromises);
+      const docsPromises: Promise<MembershipSubjectWithId>[] = [];
+      for (const vc of vcs) {
+        const docPromise = createTileDoc<VerifiableMembershipSubjectCredential>(
           vc,
           this.ceramic,
           this.dataModel,
           "VerifiableMembershipSubjectCredential",
           ["vess", "membershipCredential"]
         );
-      const storeIDX = setIDX<
+        docsPromises.push(docPromise);
+      }
+      const docs = await Promise.all(docsPromises);
+      const docUrls = docs.map((doc) => doc.ceramicId);
+      await setIDX<
         IssuedVerifiableMembershipSubjects,
         "IssuedVerifiableMembershipSubjects"
       >(
-        [val.ceramicId],
+        docUrls,
         this.ceramic,
         this.dataStore,
         "IssuedVerifiableMembershipSubjects",
         "issued"
       );
-      const uploadBackup = this.backupDataStore.uploadMembershipSubject(val);
-      await Promise.all([storeIDX, uploadBackup]);
       return {
         status: 200,
-        streamId: val.ceramicId,
+        docs: docs,
       };
     } catch (error) {
       return {
         status: 300,
         error: error,
         result: "Failed to Issue Work Credential",
-        streamId: undefined,
+        docs: [],
       };
     }
   };
 
   issueEventAttendanceCredentials = async (
-    vcs: EventAttendanceVerifiableCredential[]
+    content: EventWithId,
+    issuerAddress: string,
+    holderDids: string[],
+    signTypedData: SignTypedData<EIP712MessageTypes>
   ): Promise<CustomResponse<{ docs: EventAttendanceWithId[] }>> => {
     if (
       !this.ceramic ||
@@ -232,6 +238,26 @@ export class VessForNode extends BaseVESS {
       };
     }
     try {
+      const issuePromises: Promise<EventAttendanceVerifiableCredential>[] = [];
+      for (const did of holderDids) {
+        const eventAttendance: EventAttendance = {
+          id: did,
+          eventId: content.ceramicId,
+          eventName: content.name,
+          eventIcon: content.icon,
+        };
+        const credentialId = `${content.ceramicId}-${did}`;
+        const issuePromise =
+          createVerifiableCredential<EventAttendanceVerifiableCredential>(
+            issuerAddress,
+            credentialId,
+            VESS_CREDENTIALS.EVENT_ATTENDANCE,
+            eventAttendance,
+            signTypedData
+          );
+        issuePromises.push(issuePromise);
+      }
+      const vcs = await Promise.all(issuePromises);
       const docsPromises: Promise<EventAttendanceWithId>[] = [];
       for (const vc of vcs) {
         const docPromise = createTileDoc<EventAttendanceVerifiableCredential>(

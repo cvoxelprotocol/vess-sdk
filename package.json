@@ -1,6 +1,6 @@
 {
   "name": "vess-sdk",
-  "version": "1.0.0-alpha.2",
+  "version": "1.0.0-alpha.3",
   "description": "SDK for VESS built on top of Ceramic",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
