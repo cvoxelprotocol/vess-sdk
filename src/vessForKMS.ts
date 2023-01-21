@@ -31,12 +31,7 @@ import {
 } from "./__generated__/index.js";
 import { createVerifiableCredential } from "./utils/credentialHelper.js";
 import { VESS_CREDENTIALS } from "./constants/verifiableCredentials.js";
-
-export type IsAuthentificatedProps = {
-  isAuthentificated: boolean;
-  session?: DIDSession;
-  did?: string;
-};
+import { CredentialParam } from "./interface/kms.js";
 
 export class VessForKMS extends BaseVESS {
   account = undefined as string | undefined;
@@ -61,7 +56,7 @@ export class VessForKMS extends BaseVESS {
 
     try {
       const session = await DIDSession.fromSession(sessionStr);
-      console.log({ session });
+      localStorage.setItem("ceramic-session", session.serialize());
       this.session = session;
       this.ceramic = new CeramicClient(this.ceramicUrl);
       this.ceramic.did = this.session.did;
@@ -85,21 +80,10 @@ export class VessForKMS extends BaseVESS {
     this.ceramic = undefined;
   };
 
-  isAuthenticated = (): IsAuthentificatedProps => {
-    return {
-      isAuthentificated: !!this.session,
-      session: this.session,
-      did: this.ceramic?.did?.parent,
-    };
-  };
-
   // ============================== Issue ==============================
 
   issueMembershipSubject = async (
-    address: string,
-    credentialId: string,
-    content: VerifiableMembershipSubject,
-    sig: string
+    params: CredentialParam<VerifiableMembershipSubject>
   ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
     if (
       !this.ceramic ||
@@ -107,14 +91,16 @@ export class VessForKMS extends BaseVESS {
       !this.dataStore ||
       !this.backupDataStore
     ) {
-      return {
-        status: 300,
-        result: "You need to call connect first",
-        streamId: undefined,
-      };
+      throw new Error(
+        `You need to call connect first: ${this.ceramic} | ${this.dataStore}`
+      );
     }
 
     try {
+      const { address, credentialId, content, sig } = params;
+      if (!address || !credentialId || !sig) {
+        throw new Error("you have to pass address and credential id and sig");
+      }
       const vc =
         await createVerifiableCredential<VerifiableMembershipSubjectCredential>(
           address,
@@ -150,20 +136,12 @@ export class VessForKMS extends BaseVESS {
         streamId: val.ceramicId,
       };
     } catch (error) {
-      return {
-        status: 300,
-        error: error,
-        result: "Failed to Issue Work Credential",
-        streamId: undefined,
-      };
+      throw new Error(`Failed to Issue Credential:${error}`);
     }
   };
 
   issueEventAttendanceCredential = async (
-    address: string,
-    credentialId: string,
-    content: EventAttendance,
-    sig: string
+    params: CredentialParam<EventAttendance>
   ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
     if (
       !this.ceramic ||
@@ -171,13 +149,15 @@ export class VessForKMS extends BaseVESS {
       !this.dataStore ||
       !this.backupDataStore
     ) {
-      return {
-        status: 300,
-        result: "You need to call connect first",
-        streamId: undefined,
-      };
+      throw new Error(
+        `You need to call connect first: ${this.ceramic} | ${this.dataStore}`
+      );
     }
     try {
+      const { address, credentialId, content, sig } = params;
+      if (!address || !credentialId || !sig) {
+        throw new Error("you have to pass address and credential id and sig");
+      }
       const vc =
         await createVerifiableCredential<EventAttendanceVerifiableCredential>(
           address,
@@ -214,12 +194,7 @@ export class VessForKMS extends BaseVESS {
         streamId: val.ceramicId,
       };
     } catch (error) {
-      return {
-        status: 300,
-        error: error,
-        result: "Failed to Issue Work Credential",
-        streamId: undefined,
-      };
+      throw new Error(`Failed to Issue Credential:${error}`);
     }
   };
 }

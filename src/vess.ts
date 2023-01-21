@@ -40,18 +40,12 @@ import {
   TESTNET_CERAMIC_URL,
 } from "./baseVess.js";
 import { issueEventAttendancesParam } from "./utils/backupDataStoreHelper.js";
-import { DIDSession } from "did-session";
 import {
   HeldWorkCredentials,
   IssuedEventAttendanceVerifiableCredentials,
   IssuedVerifiableMembershipSubjects,
 } from "./__generated__/index.js";
-
-export type IsAuthentificatedProps = {
-  isAuthentificated: boolean;
-  session?: DIDSession;
-  did?: string;
-};
+import { CredentialParam } from "./interface/kms.js";
 
 export class VESS extends BaseVESS {
   provider = undefined as any | undefined;
@@ -132,14 +126,6 @@ export class VESS extends BaseVESS {
     this.ceramic = undefined;
   };
 
-  isAuthenticated = (): IsAuthentificatedProps => {
-    return {
-      isAuthentificated: !!this.session,
-      session: this.session,
-      did: this.ceramic?.did?.parent,
-    };
-  };
-
   // ============================== Issue ==============================
 
   /**
@@ -201,7 +187,7 @@ export class VESS extends BaseVESS {
   };
 
   issueMembershipSubject = async (
-    content: VerifiableMembershipSubject
+    params: CredentialParam<VerifiableMembershipSubject>
   ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
     if (
       !this.ceramic ||
@@ -219,7 +205,7 @@ export class VESS extends BaseVESS {
     try {
       // TODO: sign and create verifiable credential before save data
       const vc = await createVerifiableMembershipSubjectCredential(
-        content,
+        params.content,
         this.provider
       );
       const val: MembershipSubjectWithId =
@@ -258,7 +244,7 @@ export class VESS extends BaseVESS {
   };
 
   issueEventAttendanceCredential = async (
-    content: EventAttendance
+    params: CredentialParam<EventAttendance>
   ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
     if (
       !this.ceramic ||
@@ -273,7 +259,10 @@ export class VESS extends BaseVESS {
       };
     }
     try {
-      const vc = await createEventAttendanceCredential(content, this.provider);
+      const vc = await createEventAttendanceCredential(
+        params.content,
+        this.provider
+      );
 
       const val: EventAttendanceWithId =
         await createTileDoc<EventAttendanceVerifiableCredential>(

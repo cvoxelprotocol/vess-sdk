@@ -72,7 +72,7 @@ export class VessForNode extends BaseVESS {
       console.log(`ceramic authorized! env: ${this.env}`);
       return session;
     } catch (e) {
-      console.log(e);
+      console.error(e);
       throw new Error("Error authorizing DID session.");
     }
   };
@@ -144,12 +144,7 @@ export class VessForNode extends BaseVESS {
     holderDids: string[],
     signTypedData: SignTypedData<EIP712MessageTypes>
   ): Promise<CustomResponse<{ docs: MembershipSubjectWithId[] }>> => {
-    if (
-      !this.ceramic ||
-      !this.ceramic?.did?.parent ||
-      !this.dataStore ||
-      !this.backupDataStore
-    ) {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
       return {
         status: 300,
         result: "You need to call connect first",
@@ -225,12 +220,7 @@ export class VessForNode extends BaseVESS {
     holderDids: string[],
     signTypedData: SignTypedData<EIP712MessageTypes>
   ): Promise<CustomResponse<{ docs: EventAttendanceWithId[] }>> => {
-    if (
-      !this.ceramic ||
-      !this.ceramic?.did?.parent ||
-      !this.dataStore ||
-      !this.backupDataStore
-    ) {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
       return {
         status: 300,
         result: "You need to call connect first",
