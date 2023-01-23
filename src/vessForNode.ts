@@ -5,7 +5,7 @@ import {
   MembershipSubjectWithId,
   MembershipWithId,
   OrganizationWIthId,
-  WorkCredentialWithId,
+  WorkCredentialWithId
 } from "./interface/index.js";
 import { createTileDoc, getDataModel, setIDX } from "./utils/ceramicHelper.js";
 
@@ -19,7 +19,7 @@ import {
   EventAttendanceVerifiableCredential,
   SignTypedData,
   VerifiableMembershipSubject,
-  VerifiableMembershipSubjectCredential,
+  VerifiableMembershipSubjectCredential
 } from "./interface/eip712.js";
 import { ethers } from "ethers";
 import { DIDSession } from "did-session";
@@ -28,7 +28,7 @@ import { PROD_CERAMIC_URL, TESTNET_CERAMIC_URL, BaseVESS } from "./baseVess.js";
 import {
   HeldWorkCredentials,
   IssuedEventAttendanceVerifiableCredentials,
-  IssuedVerifiableMembershipSubjects,
+  IssuedVerifiableMembershipSubjects
 } from "./__generated__/index.js";
 import { SignSIWE } from "./interface/kms.js";
 import { createVerifiableCredential } from "./utils/credentialHelper.js";
@@ -44,7 +44,8 @@ export class VessForNode extends BaseVESS {
   connect = async (
     account: string,
     signSIWE: SignSIWE,
-    env: "mainnet" | "testnet-clay" = "mainnet"
+    env: "mainnet" | "testnet-clay" = "mainnet",
+    expirationTime?: string
   ): Promise<DIDSession> => {
     this.dataModel = getDataModel(env);
     this.env = env;
@@ -60,6 +61,7 @@ export class VessForNode extends BaseVESS {
 
       const session = await DIDSession.authorize(authMethod, {
         resources: ["ceramic://*"],
+        expirationTime: expirationTime
       });
       this.session = session;
       this.ceramic = new CeramicClient(this.ceramicUrl);
@@ -67,7 +69,7 @@ export class VessForNode extends BaseVESS {
       this.dataStore = new DIDDataStore({
         ceramic: this.ceramic,
         model: this.dataModel,
-        id: this.ceramic?.did?.parent,
+        id: this.ceramic?.did?.parent
       });
       console.log(`ceramic authorized! env: ${this.env}`);
       return session;
@@ -102,7 +104,7 @@ export class VessForNode extends BaseVESS {
       return {
         status: 300,
         result: "You need to call connect first",
-        streamId: undefined,
+        streamId: undefined
       };
     }
     try {
@@ -125,14 +127,14 @@ export class VessForNode extends BaseVESS {
       await Promise.all([storeIDX, uploadBackup]);
       return {
         status: 200,
-        streamId: val.ceramicId,
+        streamId: val.ceramicId
       };
     } catch (error) {
       return {
         status: 300,
         error: error,
         result: "Failed to Issue Work Credential",
-        streamId: undefined,
+        streamId: undefined
       };
     }
   };
@@ -148,13 +150,14 @@ export class VessForNode extends BaseVESS {
       return {
         status: 300,
         result: "You need to call connect first",
-        docs: [],
+        docs: []
       };
     }
 
     try {
-      const issuePromises: Promise<VerifiableMembershipSubjectCredential>[] =
-        [];
+      const issuePromises: Promise<
+        VerifiableMembershipSubjectCredential
+      >[] = [];
       for (const did of holderDids) {
         const content: VerifiableMembershipSubject = {
           id: did,
@@ -163,17 +166,18 @@ export class VessForNode extends BaseVESS {
           organizationIcon: org.icon || "",
           membershipName: membership.name,
           membershipIcon: membership.icon || "",
-          membershipId: membership.ceramicId,
+          membershipId: membership.ceramicId
         };
         const credentialId = `${content.organizationId}-${content.membershipId}-${content.id}`;
-        const issuePromise =
-          createVerifiableCredential<VerifiableMembershipSubjectCredential>(
-            issuerAddress,
-            credentialId,
-            VESS_CREDENTIALS.EVENT_ATTENDANCE,
-            content,
-            signTypedData
-          );
+        const issuePromise = createVerifiableCredential<
+          VerifiableMembershipSubjectCredential
+        >(
+          issuerAddress,
+          credentialId,
+          VESS_CREDENTIALS.EVENT_ATTENDANCE,
+          content,
+          signTypedData
+        );
         issuePromises.push(issuePromise);
       }
       const vcs = await Promise.all(issuePromises);
@@ -189,7 +193,7 @@ export class VessForNode extends BaseVESS {
         docsPromises.push(docPromise);
       }
       const docs = await Promise.all(docsPromises);
-      const docUrls = docs.map((doc) => doc.ceramicId);
+      const docUrls = docs.map(doc => doc.ceramicId);
       await setIDX<
         IssuedVerifiableMembershipSubjects,
         "IssuedVerifiableMembershipSubjects"
@@ -202,14 +206,14 @@ export class VessForNode extends BaseVESS {
       );
       return {
         status: 200,
-        docs: docs,
+        docs: docs
       };
     } catch (error) {
       return {
         status: 300,
         error: error,
         result: "Failed to Issue Work Credential",
-        docs: [],
+        docs: []
       };
     }
   };
@@ -224,7 +228,7 @@ export class VessForNode extends BaseVESS {
       return {
         status: 300,
         result: "You need to call connect first",
-        docs: [],
+        docs: []
       };
     }
     try {
@@ -234,17 +238,18 @@ export class VessForNode extends BaseVESS {
           id: did,
           eventId: content.ceramicId,
           eventName: content.name,
-          eventIcon: content.icon,
+          eventIcon: content.icon
         };
         const credentialId = `${content.ceramicId}-${did}`;
-        const issuePromise =
-          createVerifiableCredential<EventAttendanceVerifiableCredential>(
-            issuerAddress,
-            credentialId,
-            VESS_CREDENTIALS.EVENT_ATTENDANCE,
-            eventAttendance,
-            signTypedData
-          );
+        const issuePromise = createVerifiableCredential<
+          EventAttendanceVerifiableCredential
+        >(
+          issuerAddress,
+          credentialId,
+          VESS_CREDENTIALS.EVENT_ATTENDANCE,
+          eventAttendance,
+          signTypedData
+        );
         issuePromises.push(issuePromise);
       }
       const vcs = await Promise.all(issuePromises);
@@ -260,7 +265,7 @@ export class VessForNode extends BaseVESS {
         docsPromises.push(docPromise);
       }
       const docs = await Promise.all(docsPromises);
-      const docUrls = docs.map((doc) => doc.ceramicId);
+      const docUrls = docs.map(doc => doc.ceramicId);
       await setIDX<
         IssuedEventAttendanceVerifiableCredentials,
         "IssuedEventAttendanceVerifiableCredentials"
@@ -273,14 +278,14 @@ export class VessForNode extends BaseVESS {
       );
       return {
         status: 200,
-        docs,
+        docs
       };
     } catch (error) {
       return {
         status: 300,
         error: error,
         result: "Failed to Issue Work Credential",
-        docs: [],
+        docs: []
       };
     }
   };
