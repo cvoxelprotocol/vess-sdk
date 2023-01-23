@@ -1,8 +1,8 @@
 import {
   EVENT_ATTENDANCE_EIP712_TYPE,
   MEMBERSHIP_SUBJECT_EIP712_TYPE,
-  TypedData,
-} from "../interface/eip712";
+  TypedData
+} from "../interface/eip712.js";
 
 export const DEFAULT_CONTEXT = "https://www.w3.org/2018/credentials/v1";
 export const EIP712_CONTEXT =
@@ -24,7 +24,7 @@ export const MEMBERSHIP_DOMAIN_NAME = "Verifiable Membership Subject";
 export const VESS_CREDENTIALS_NAME = {
   MEMBERSHIP: "Membership",
   EVENT_ATTENDANCE: "EventAttendance",
-  WORK_CREDENTIAL: "WorkCredential",
+  WORK_CREDENTIAL: "WorkCredential"
 } as const;
 
 export type VessCredentialNames = keyof typeof VESS_CREDENTIALS_NAME;
@@ -45,18 +45,18 @@ export const VESS_CREDENTIALS: VessCredentialSchema = {
     vcType: MEMBERSHIP_VC_TYPE,
     domain: MEMBERSHIP_DOMAIN_NAME,
     schema: MEMBERSHIP_SUBJECT_SCHEMA,
-    typedData: MEMBERSHIP_SUBJECT_EIP712_TYPE,
+    typedData: MEMBERSHIP_SUBJECT_EIP712_TYPE
   },
   EVENT_ATTENDANCE: {
     vcType: EVENT_ATTENDANCE_VC_TYPE,
     domain: EVENT_DOMAIN_NAME,
     schema: EVENT_ATTENDANCE_SCHEMA,
-    typedData: EVENT_ATTENDANCE_EIP712_TYPE,
+    typedData: EVENT_ATTENDANCE_EIP712_TYPE
   },
   WORK_CREDENTIAL: {
     vcType: WORK_VC_TYPE,
     domain: WORK_DOMAIN_NAME,
     schema: "",
-    typedData: MEMBERSHIP_SUBJECT_EIP712_TYPE,
-  },
+    typedData: MEMBERSHIP_SUBJECT_EIP712_TYPE
+  }
 };
