@@ -112,6 +112,7 @@ export type EventAttendanceWithId =
   WithCeramicId<EventAttendanceVerifiableCredential>;
 
 export type EventWithId = WithCeramicId<Event>;
+export type BusinessProfileWithId = WithCeramicId<BusinessProfile>;
 
 export type ModelTypes = ModelTypeAliases<
   {
@@ -137,62 +138,77 @@ export type ModelTypes = ModelTypeAliases<
     IssuedVerifiableMembershipSubjects: IssuedVerifiableMembershipSubjects;
     OldOrganization: OldOrganization;
     CreatedOldOrganizations: CreatedOldOrganizations;
+    BusinessProfile: BusinessProfile;
+    SocialLinks: SocialLinks;
+    HighlightedCredentials: HighlightedCredentials;
+    SelfClaimedMembershipSubject: SelfClaimedMembershipSubject;
+    HeldSelfClaimedMembershipSubjects: HeldSelfClaimedMembershipSubjects;
   },
   {
-    workCredential: "WorkCredential";
-    verifiableWorkCredential: "VerifiableWorkCredential";
-    heldWorkCredentials: "HeldWorkCredentials";
-    OldWorkCredential: "OldWorkCredential";
-    OldWorkCredentials: "OldWorkCredentials";
-    heldVerifiableWorkCredentials: "HeldVerifiableWorkCredentials";
-    Organization: "Organization";
-    MemberShip: "MemberShip";
-    Event: "Event";
-    IssuedEvents: "IssuedEvents";
-    MembershipSubject: "MembershipSubject";
-    EventAttendanceVerifiableCredential: "EventAttendanceVerifiableCredential";
-    IssuedEventAttendanceVerifiableCredentials: "IssuedEventAttendanceVerifiableCredentials";
-    HeldEventAttendanceVerifiableCredentials: "HeldEventAttendanceVerifiableCredentials";
-    CreatedOrganizations: "CreatedOrganizations";
-    CreatedMemberships: "CreatedMemberships";
-    CreatedMembershipSubjects: "CreatedMembershipSubjects";
-    VerifiableMembershipSubjectCredential: "VerifiableMembershipSubjectCredential";
-    HeldVerifiableMembershipSubjects: "HeldVerifiableMembershipSubjects";
-    IssuedVerifiableMembershipSubjects: "IssuedVerifiableMembershipSubjects";
-    OldOrganization: "OldOrganization";
-    CreatedOldOrganizations: "CreatedOldOrganizations";
+    workCredential: 'WorkCredential';
+    verifiableWorkCredential: 'VerifiableWorkCredential';
+    heldWorkCredentials: 'HeldWorkCredentials';
+    OldWorkCredential: 'OldWorkCredential';
+    OldWorkCredentials: 'OldWorkCredentials';
+    heldVerifiableWorkCredentials: 'HeldVerifiableWorkCredentials';
+    Organization: 'Organization';
+    MemberShip: 'MemberShip';
+    Event: 'Event';
+    IssuedEvents: 'IssuedEvents';
+    MembershipSubject: 'MembershipSubject';
+    EventAttendanceVerifiableCredential: 'EventAttendanceVerifiableCredential';
+    IssuedEventAttendanceVerifiableCredentials: 'IssuedEventAttendanceVerifiableCredentials';
+    HeldEventAttendanceVerifiableCredentials: 'HeldEventAttendanceVerifiableCredentials';
+    CreatedOrganizations: 'CreatedOrganizations';
+    CreatedMemberships: 'CreatedMemberships';
+    CreatedMembershipSubjects: 'CreatedMembershipSubjects';
+    VerifiableMembershipSubjectCredential: 'VerifiableMembershipSubjectCredential';
+    HeldVerifiableMembershipSubjects: 'HeldVerifiableMembershipSubjects';
+    IssuedVerifiableMembershipSubjects: 'IssuedVerifiableMembershipSubjects';
+    OldOrganization: 'OldOrganization';
+    CreatedOldOrganizations: 'CreatedOldOrganizations';
+    BusinessProfile: 'BusinessProfile';
+    SocialLinks: 'SocialLinks';
+    HighlightedCredentials: 'HighlightedCredentials';
+    SelfClaimedMembershipSubject: 'SelfClaimedMembershipSubject';
+    HeldSelfClaimedMembershipSubjects: 'HeldSelfClaimedMembershipSubjects';
   }
 >;
 
 const AliasType = {
-  workCredential: "WorkCredential",
-  verifiableWorkCredential: "VerifiableWorkCredential",
-  heldWorkCredentials: "HeldWorkCredentials",
-  OldWorkCredential: "OldWorkCredential",
-  OldWorkCredentials: "OldWorkCredentials",
-  HeldVerifiableWorkCredentials: "HeldVerifiableWorkCredentials",
-  Organization: "Organization",
-  MemberShip: "MemberShip",
-  Event: "Event",
-  IssuedEvents: "IssuedEvents",
-  MembershipSubject: "MembershipSubject",
-  EventAttendanceVerifiableCredential: "EventAttendanceVerifiableCredential",
+  workCredential: 'WorkCredential',
+  verifiableWorkCredential: 'VerifiableWorkCredential',
+  heldWorkCredentials: 'HeldWorkCredentials',
+  OldWorkCredential: 'OldWorkCredential',
+  OldWorkCredentials: 'OldWorkCredentials',
+  HeldVerifiableWorkCredentials: 'HeldVerifiableWorkCredentials',
+  Organization: 'Organization',
+  MemberShip: 'MemberShip',
+  Event: 'Event',
+  IssuedEvents: 'IssuedEvents',
+  MembershipSubject: 'MembershipSubject',
+  EventAttendanceVerifiableCredential: 'EventAttendanceVerifiableCredential',
   IssuedEventAttendanceVerifiableCredentials:
-    "IssuedEventAttendanceVerifiableCredentials",
+    'IssuedEventAttendanceVerifiableCredentials',
   HeldEventAttendanceVerifiableCredentials:
-    "HeldEventAttendanceVerifiableCredentials",
-  CreatedOrganizations: "CreatedOrganizations",
-  CreatedMemberships: "CreatedMemberships",
-  CreatedMembershipSubjects: "CreatedMembershipSubjects",
+    'HeldEventAttendanceVerifiableCredentials',
+  CreatedOrganizations: 'CreatedOrganizations',
+  CreatedMemberships: 'CreatedMemberships',
+  CreatedMembershipSubjects: 'CreatedMembershipSubjects',
   VerifiableMembershipSubjectCredential:
-    "VerifiableMembershipSubjectCredential",
-  HeldVerifiableMembershipSubjects: "HeldVerifiableMembershipSubjects",
-  IssuedVerifiableMembershipSubjects: "IssuedVerifiableMembershipSubjects",
-  OldOrganization: "OldOrganization",
-  CreatedOldOrganizations: "CreatedOldOrganizations",
+    'VerifiableMembershipSubjectCredential',
+  HeldVerifiableMembershipSubjects: 'HeldVerifiableMembershipSubjects',
+  IssuedVerifiableMembershipSubjects: 'IssuedVerifiableMembershipSubjects',
+  OldOrganization: 'OldOrganization',
+  CreatedOldOrganizations: 'CreatedOldOrganizations',
+  BusinessProfile: 'BusinessProfile',
+  SocialLinks: 'SocialLinks',
+  HighlightedCredentials: 'HighlightedCredentials',
+  SelfClaimedMembershipSubject: 'SelfClaimedMembershipSubject',
+  HeldSelfClaimedMembershipSubjects: 'HeldSelfClaimedMembershipSubjects',
 } as const;
 export type AliasTypes = typeof AliasType[keyof typeof AliasType];
-export type Alias = keyof ModelTypes["definitions"];
+export type Alias = keyof ModelTypes['definitions'];
 
 export type BaseResponse = {
   status: 200 | 300;
