@@ -1,13 +1,13 @@
-import { utils } from "ethers";
+import { utils } from 'ethers';
 import {
   SignTypedDataVersion,
   recoverTypedSignature,
-} from "@metamask/eth-sig-util";
+} from '@metamask/eth-sig-util';
 
 import {
   EventAttendanceWithId,
   MembershipSubjectWithId,
-} from "../interface/index.js";
+} from '../interface/index.js';
 import {
   CLIENT_EIP712_TYPE,
   DELIVERABLES_EIP712_TYPE,
@@ -22,31 +22,31 @@ import {
   WORK_EIP712_TYPE,
   WORK_SUBJECT_EIP712_TYPE,
   EventAttendanceVerifiableCredential,
-} from "../interface/eip712.js";
+} from '../interface/eip712.js';
 
 import {
   WorkCredential,
   WorkSubject,
-} from "../__generated__/types/WorkCredential";
-import { VerifiableMembershipSubject } from "../__generated__/types/VerifiableMembershipSubjectCredential";
-import { EventAttendance } from "../__generated__/types/EventAttendanceVerifiableCredential";
-import { convertDateToTimestampStr } from "./common.js";
-import { Signatures } from "../__generated__/index.js";
+} from '../__generated__/types/WorkCredential';
+import { VerifiableMembershipSubject } from '../__generated__/types/VerifiableMembershipSubjectCredential';
+import { EventAttendance } from '../__generated__/types/EventAttendanceVerifiableCredential';
+import { convertDateToTimestampStr } from './common.js';
+import { Signatures } from '../__generated__/index.js';
 import {
   createVerifiableCredential,
   getDefaultDomainTypedData,
   verifyVerifiableCredential,
-} from "./credentialHelper.js";
-import { VESS_CREDENTIALS } from "../constants/verifiableCredentials.js";
+} from './credentialHelper.js';
+import { VESS_CREDENTIALS } from '../constants/verifiableCredentials.js';
 
 export const createVerifiableMembershipSubjectCredential = async (
   membershipSubject: VerifiableMembershipSubject,
   provider?: any
 ): Promise<VerifiableMembershipSubjectCredential> => {
-  if (!provider) throw new Error("Missing provider for getSignature");
+  if (!provider) throw new Error('Missing provider for getSignature');
 
   const credentialId = `${membershipSubject.organizationId}-${membershipSubject.membershipId}-${membershipSubject.id}`;
-  const accounts = await safeSend(provider, "eth_accounts", []);
+  const accounts = await safeSend(provider, 'eth_accounts', []);
   const address = accounts[0].toLowerCase();
 
   return await createVerifiableCredential<VerifiableMembershipSubjectCredential>(
@@ -55,9 +55,9 @@ export const createVerifiableMembershipSubjectCredential = async (
     VESS_CREDENTIALS.MEMBERSHIP,
     membershipSubject,
     async (data: EIP712TypedData<EIP712MessageTypes>) => {
-      const accounts = await safeSend(provider, "eth_accounts", []);
+      const accounts = await safeSend(provider, 'eth_accounts', []);
       const address = accounts[0].toLowerCase();
-      const sig: string = await safeSend(provider, "eth_signTypedData_v4", [
+      const sig: string = await safeSend(provider, 'eth_signTypedData_v4', [
         address,
         JSON.stringify(data),
       ]);
@@ -70,10 +70,10 @@ export const createEventAttendanceCredential = async (
   eventAttendance: EventAttendance,
   provider?: any
 ): Promise<EventAttendanceVerifiableCredential> => {
-  if (!provider) throw new Error("Missing provider for getSignature");
+  if (!provider) throw new Error('Missing provider for getSignature');
 
   const credentialId = `${eventAttendance.eventId}-${eventAttendance.id}`;
-  const accounts = await safeSend(provider, "eth_accounts", []);
+  const accounts = await safeSend(provider, 'eth_accounts', []);
   const address = accounts[0].toLowerCase();
   return await createVerifiableCredential<EventAttendanceVerifiableCredential>(
     address,
@@ -81,9 +81,9 @@ export const createEventAttendanceCredential = async (
     VESS_CREDENTIALS.EVENT_ATTENDANCE,
     eventAttendance,
     async (data: EIP712TypedData<EIP712MessageTypes>) => {
-      const accounts = await safeSend(provider, "eth_accounts", []);
+      const accounts = await safeSend(provider, 'eth_accounts', []);
       const address = accounts[0].toLowerCase();
-      const sig: string = await safeSend(provider, "eth_signTypedData_v4", [
+      const sig: string = await safeSend(provider, 'eth_signTypedData_v4', [
         address,
         JSON.stringify(data),
       ]);
@@ -159,7 +159,7 @@ export function safeSend(
 }
 export function encodeRpcMessage(method: string, params: any[]) {
   return {
-    jsonrpc: "2.0",
+    jsonrpc: '2.0',
     id: 1,
     method,
     params,
@@ -172,7 +172,7 @@ export const createEIP712WorkCredential = async (
   subject: WorkSubject,
   provider?: any
 ): Promise<WorkCredential> => {
-  if (!provider) throw new Error("Missing provider for getSignature");
+  if (!provider) throw new Error('Missing provider for getSignature');
   const nowTimestamp = convertDateToTimestampStr(new Date());
   const holderSig = await _getEIP712WorkCredentialSubjectSignature(
     subject,
@@ -194,14 +194,14 @@ export const _getEIP712WorkCredentialSubjectSignature = async (
   subject: WorkSubject,
   provider?: any
 ): Promise<string> => {
-  if (!provider) throw new Error("Missing provider for getSignature");
+  if (!provider) throw new Error('Missing provider for getSignature');
   const domain = getDefaultDomainTypedData(
     VESS_CREDENTIALS.WORK_CREDENTIAL.domain
   );
 
   const credentialTypedData = getEIP712WorkSubjectTypedData(domain, subject);
-  const accounts = await safeSend(provider, "eth_accounts", []);
-  return await safeSend(provider, "eth_signTypedData_v4", [
+  const accounts = await safeSend(provider, 'eth_accounts', []);
+  return await safeSend(provider, 'eth_signTypedData_v4', [
     accounts[0].toLowerCase(),
     JSON.stringify(credentialTypedData),
   ]);

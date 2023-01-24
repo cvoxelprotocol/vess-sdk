@@ -1,14 +1,14 @@
 import {
   recoverTypedSignature,
-  SignTypedDataVersion
-} from "@metamask/eth-sig-util";
-import { utils } from "ethers";
+  SignTypedDataVersion,
+} from '@metamask/eth-sig-util';
+import { utils } from 'ethers';
 import {
   DEFAULT_CONTEXT,
   DEFAULT_VC_TYPE,
   EIP712_CONTEXT,
-  VerifiableCredentialSchemaType
-} from "../constants/verifiableCredentials.js";
+  VerifiableCredentialSchemaType,
+} from '../constants/verifiableCredentials.js';
 import {
   CredentialSubject,
   CREDENTIAL_SCHEMA_W3C_TYPE,
@@ -24,9 +24,9 @@ import {
   VERIFIABLE_CREDENTIAL_W3C_TYPE,
   VerifyTypedData,
   W3CCredential,
-  W3CCredentialTypedData
-} from "../interface/eip712.js";
-import { getPkhDIDFromAddress } from "./ceramicHelper.js";
+  W3CCredentialTypedData,
+} from '../interface/eip712.js';
+import { getPkhDIDFromAddress } from './ceramicHelper.js';
 
 export const createVerifiableCredential = async <
   T extends VerifiableCredential
@@ -47,22 +47,22 @@ export const createVerifiableCredential = async <
   const baseContexts = [DEFAULT_CONTEXT, EIP712_CONTEXT];
 
   let credential: W3CCredential = {
-    "@context": customContext
+    '@context': customContext
       ? baseContexts.concat(customContext)
       : baseContexts,
     type: [DEFAULT_VC_TYPE, vcType.vcType],
     id: id,
     issuer: {
       id: issuerDID,
-      ethereumAddress: address
+      ethereumAddress: address,
     },
     credentialSubject: subject,
     credentialSchema: {
       id: vcType.schema,
-      type: "Eip712SchemaValidator2021"
+      type: 'Eip712SchemaValidator2021',
     },
     issuanceDate: new Date(issuanceDate).toISOString(),
-    expirationDate: new Date(expiration || expirationDate).toISOString()
+    expirationDate: new Date(expiration || expirationDate).toISOString(),
   };
 
   const domain = getDefaultDomainTypedData(vcType.domain);
@@ -94,7 +94,7 @@ export const verifyVerifiableCredential = async <
       return recoverTypedSignature({
         data: data,
         signature: proofValue,
-        version: SignTypedDataVersion.V4
+        version: SignTypedDataVersion.V4,
       });
     }
   );
@@ -136,23 +136,23 @@ const createEIP712VerifiableCredential = async (
 
   let proof: Proof = {
     verificationMethod:
-      credentialTypedData.message.issuer.id + "#ethereumAddress",
+      credentialTypedData.message.issuer.id + '#ethereumAddress',
     ethereumAddress: credentialTypedData.message.issuer.ethereumAddress,
     created: new Date(Date.now()).toISOString(),
-    proofPurpose: "assertionMethod",
-    type: "EthereumEip712Signature2021",
+    proofPurpose: 'assertionMethod',
+    type: 'EthereumEip712Signature2021',
     ...credentialTypedData.message.proof,
     proofValue: signature,
     eip712: {
       domain: { ...credentialTypedData.domain },
       types: { ...credentialTypedData.types },
-      primaryType: credentialTypedData.primaryType
-    }
+      primaryType: credentialTypedData.primaryType,
+    },
   };
 
   let verifiableCredential = {
     ...credential,
-    proof
+    proof,
   };
 
   return verifiableCredential;
@@ -163,9 +163,9 @@ export const getDefaultDomainTypedData = (
 ): EIP712DomainTypedData => {
   return {
     name: name,
-    version: "1",
+    version: '1',
     chainId: 1,
-    verifyingContract: "0x00000000000000000000000000000000000000000000" // WIP
+    verifyingContract: '0x00000000000000000000000000000000000000000000', // WIP
   };
 };
 
@@ -183,8 +183,8 @@ const getW3CCredentialTypedData = (
       VerifiableCredential: VERIFIABLE_CREDENTIAL_W3C_TYPE,
       CredentialSchema: CREDENTIAL_SCHEMA_W3C_TYPE,
       Issuer: ISSUER_EIP712_TYPE,
-      ...credentialSubjectTypes
-    }
+      ...credentialSubjectTypes,
+    },
   };
 };
 
@@ -195,6 +195,6 @@ const formatDomainTypedData = (
     name: domain.name,
     version: domain.version,
     chainId: domain.chainId,
-    verifyingContract: domain.verifyingContract
+    verifyingContract: domain.verifyingContract,
   };
 };

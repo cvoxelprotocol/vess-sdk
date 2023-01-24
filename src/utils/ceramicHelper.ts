@@ -1,27 +1,27 @@
-import { CeramicClient } from "@ceramicnetwork/http-client";
-import { TileDocument } from "@ceramicnetwork/stream-tile";
-import { aliases as devModelAliases } from "../__generated__/aliases_dev.js";
-import { aliases as prodModelAliases } from "../__generated__/aliases.js";
+import { CeramicClient } from '@ceramicnetwork/http-client';
+import { TileDocument } from '@ceramicnetwork/stream-tile';
+import { aliases as devModelAliases } from '../__generated__/aliases_dev.js';
+import { aliases as prodModelAliases } from '../__generated__/aliases.js';
 import {
   Alias,
   AliasTypes,
   BaseIDXType,
   ModelTypes,
   WithCeramicId,
-} from "../interface/index.js";
-import { ModelTypesToAliases } from "@glazed/types";
-import type { AuthMethod } from "@didtools/cacao";
-import { DIDSession } from "did-session";
-import { DIDDataStore } from "@glazed/did-datastore";
-import { removeUndefinedFromArray } from "./common.js";
+} from '../interface/index.js';
+import { ModelTypesToAliases } from '@glazed/types';
+import type { AuthMethod } from '@didtools/cacao';
+import { DIDSession } from 'did-session';
+import { DIDDataStore } from '@glazed/did-datastore';
+import { removeUndefinedFromArray } from './common.js';
 
 export const ETH_CHAIN_ID = `eip155:1:`;
 
 export const getDataModel = (
-  env?: "mainnet" | "testnet-clay"
+  env?: 'mainnet' | 'testnet-clay'
 ): ModelTypesToAliases<ModelTypes> => {
   if (!env) return prodModelAliases;
-  return env === "mainnet" ? prodModelAliases : devModelAliases;
+  return env === 'mainnet' ? prodModelAliases : devModelAliases;
 };
 
 export const getSchema = (
@@ -40,7 +40,7 @@ export const createTileDoc = async <T>(
   family?: string
 ): Promise<WithCeramicId<T>> => {
   if (!ceramic || !ceramic?.did?.parent) {
-    throw new Error("You need to call connect first");
+    throw new Error('You need to call connect first');
   }
   try {
     const doc = await createTileDocument<T>(
@@ -55,7 +55,7 @@ export const createTileDoc = async <T>(
     return { ...content, ceramicId: docUrl };
   } catch (error) {
     console.error(error);
-    throw new Error("Failed to Create Tile Doc");
+    throw new Error('Failed to Create Tile Doc');
   }
 };
 
@@ -64,27 +64,27 @@ export const setIDX = async <T extends BaseIDXType, K extends Alias>(
   ceramic: CeramicClient | undefined,
   dataStore: DIDDataStore<ModelTypes> | undefined,
   modelName: K,
-  defautParamName: "issued" | "created" | "held"
+  defautParamName: 'issued' | 'created' | 'held'
 ): Promise<void> => {
   if (!dataStore || !ceramic?.did?.parent) {
-    throw new Error("You need to call connect first");
+    throw new Error('You need to call connect first');
   }
   const val = await dataStore.get<K, T>(modelName, ceramic?.did?.parent);
   const currentVals = val?.issued ?? val?.created ?? val?.held ?? [];
   const updatedVals = [...currentVals, ...contentId];
-  if (defautParamName === "created") {
+  if (defautParamName === 'created') {
     await dataStore.set(modelName, {
       created: updatedVals,
     });
     return;
   }
-  if (defautParamName === "issued") {
+  if (defautParamName === 'issued') {
     await dataStore.set(modelName, {
       issued: updatedVals,
     });
     return;
   }
-  if (defautParamName === "held") {
+  if (defautParamName === 'held') {
     await dataStore.set(modelName, {
       held: updatedVals,
     });
@@ -104,7 +104,7 @@ export const getTileDoc = async <T>(
     };
   } catch (error) {
     console.error(error);
-    throw new Error("Failed to Get Tile Doc");
+    throw new Error('Failed to Get Tile Doc');
   }
 };
 
@@ -116,10 +116,10 @@ export const getIDXDocs = async <T extends BaseIDXType, K extends Alias, U>(
 ): Promise<WithCeramicId<U>[]> => {
   try {
     if (!did) {
-      throw new Error("You need to call connect first");
+      throw new Error('You need to call connect first');
     }
     const val = await dataStore.get<K, T>(modelName, did);
-    const idxs = val?.issued ?? val?.created ?? [];
+    const idxs = val?.issued ?? val?.created ?? val?.held ?? [];
     if (idxs.length === 0) return [];
     const arr: Promise<WithCeramicId<U> | undefined>[] = [];
     for (const streamId of idxs) {
@@ -130,7 +130,10 @@ export const getIDXDocs = async <T extends BaseIDXType, K extends Alias, U>(
     return removeUndefinedFromArray<WithCeramicId<U>>(res);
   } catch (error) {
     console.error(error);
-    throw new Error("Failed to Get IDX");
+    return [];
+    // throw new Error("Failed to Get IDX");
+  }
+};
   }
 };
 
@@ -139,7 +142,7 @@ export const updateTileDoc = async <T>(
   content: WithCeramicId<T>
 ): Promise<void> => {
   if (!ceramic || !ceramic?.did?.parent) {
-    throw new Error("You need to call connect first");
+    throw new Error('You need to call connect first');
   }
   try {
     const doc = await TileDocument.load<T>(ceramic, content.ceramicId);
@@ -147,7 +150,7 @@ export const updateTileDoc = async <T>(
     await doc.update(content);
   } catch (error) {
     console.error(error);
-    throw new Error("Failed to Create Tile Doc");
+    throw new Error('Failed to Create Tile Doc');
   }
 };
 
@@ -156,8 +159,8 @@ export const createTileDocument = async <T>(
   did: string,
   content: T,
   schema: string,
-  tags: string[] = ["vess", "workCredential"],
-  family = "VESS"
+  tags: string[] = ['vess', 'workCredential'],
+  family = 'VESS'
 ): Promise<TileDocument<T>> => {
   try {
     let doc = await TileDocument.create(client, content, {
@@ -168,8 +171,8 @@ export const createTileDocument = async <T>(
     });
     return doc;
   } catch (e) {
-    console.log("Error creating TileDocument: ", e);
-    throw new Error("Error creating TileDocument");
+    console.log('Error creating TileDocument: ', e);
+    throw new Error('Error creating TileDocument');
   }
 };
 
@@ -182,7 +185,7 @@ export const getPkhDIDFromAddress = (address: string): string => {
 };
 export const getAddressFromPkh = (did: string): string => {
   if (isDIDstring(did)) {
-    return did.replace(`did:pkh:${ETH_CHAIN_ID}`, "");
+    return did.replace(`did:pkh:${ETH_CHAIN_ID}`, '');
   } else {
     return did;
   }
@@ -193,8 +196,8 @@ export function isEthereumAddress(address: string): boolean {
 }
 
 export const removeCeramicPrefix = (docUrl?: string) => {
-  if (!docUrl) return "";
-  return docUrl.replace(`ceramic://`, "");
+  if (!docUrl) return '';
+  return docUrl.replace(`ceramic://`, '');
 };
 export const addCeramicPrefix = (backupId: string) => {
   return `ceramic://${backupId}`;
@@ -219,7 +222,7 @@ export function formatDID(did: string, maxLength = 20): string {
 export const loadSession = async (
   authMethod: AuthMethod
 ): Promise<DIDSession> => {
-  const sessionStr = localStorage.getItem("ceramic-session");
+  const sessionStr = localStorage.getItem('ceramic-session');
   let session;
 
   if (sessionStr) {
@@ -229,21 +232,21 @@ export const loadSession = async (
 
   if (!session || (session.hasSession && session.isExpired)) {
     session = await DIDSession.authorize(authMethod, {
-      resources: ["ceramic://*"],
+      resources: ['ceramic://*'],
       expiresInSecs: 60 * 60 * 24 * 90,
     });
-    localStorage.setItem("ceramic-session", session.serialize());
+    localStorage.setItem('ceramic-session', session.serialize());
   }
   // console.log({ sessionStr });
   return session;
 };
 
 export const removeSession = () => {
-  localStorage.removeItem("ceramic-session");
+  localStorage.removeItem('ceramic-session');
 };
 
 export const hasAuthorizedSession = async () => {
-  const sessionStr = localStorage.getItem("ceramic-session");
+  const sessionStr = localStorage.getItem('ceramic-session');
   if (sessionStr) {
     const session = await DIDSession.fromSession(sessionStr);
     return session && session.isAuthorized();

@@ -1,29 +1,35 @@
-import { ModelTypeAliases } from "@glazed/types";
-import { CreatedMemberships } from "../__generated__/types/CreatedMemberships";
-import { CreatedMembershipSubjects } from "../__generated__/types/CreatedMembershipSubjects";
-import { CreatedOrganizations } from "../__generated__/types/CreatedOrganizations";
+import { ModelTypeAliases } from '@glazed/types';
 import {
   EventAttendanceVerifiableCredential,
   VerifiableMembershipSubjectCredential,
-} from "./eip712";
-import { Event } from "../__generated__/types/Event";
-import { HeldEventAttendanceVerifiableCredentials } from "../__generated__/types/HeldEventAttendanceVerifiableCredentials";
-import { HeldVerifiableMembershipSubjects } from "../__generated__/types/HeldVerifiableMembershipSubjects";
-import { HeldVerifiableWorkCredentials } from "../__generated__/types/HeldVerifiableWorkCredentials";
-import { HeldWorkCredentials } from "../__generated__/types/HeldWorkCredentials";
-import { IssuedEventAttendanceVerifiableCredentials } from "../__generated__/types/IssuedEventAttendanceVerifiableCredentials";
-import { IssuedEvents } from "../__generated__/types/IssuedEvents";
-import { IssuedVerifiableMembershipSubjects } from "../__generated__/types/IssuedVerifiableMembershipSubjects";
-import { Membership } from "../__generated__/types/MemberShip";
-import { MembershipSubject } from "../__generated__/types/MembershipSubject";
-import { OldOrganization } from "../__generated__/types/OldOrganization";
-import { Organization } from "../__generated__/types/Organization";
+} from './eip712';
+
 import {
+  Event,
   DeliverableItem,
   VerifiableWorkCredential,
-} from "../__generated__/types/VerifiableWorkCredential";
-import { WorkCredential } from "../__generated__/types/WorkCredential";
-import { CreatedOldOrganizations } from "../__generated__/types/CreatedOldOrganizations";
+  CreatedOrganizations,
+  CreatedMembershipSubjects,
+  CreatedMemberships,
+  Organization,
+  OldOrganization,
+  MembershipSubject,
+  Membership,
+  WorkCredential,
+  IssuedVerifiableMembershipSubjects,
+  CreatedOldOrganizations,
+  IssuedEvents,
+  BusinessProfile,
+  IssuedEventAttendanceVerifiableCredentials,
+  SocialLinks,
+  HeldWorkCredentials,
+  HighlightedCredentials,
+  HeldVerifiableWorkCredentials,
+  SelfClaimedMembershipSubject,
+  HeldVerifiableMembershipSubjects,
+  HeldSelfClaimedMembershipSubjects,
+  HeldEventAttendanceVerifiableCredentials,
+} from '../__generated__/index.js';
 
 export type OldWorkCredential = {
   to: string; // payee address. maybe contract address
@@ -40,7 +46,7 @@ export type OldWorkCredential = {
   networkId: number; // eth mainnet = 1 | polygon mainnet = 137
   issuedTimestamp: string; //block timestamp
   txHash?: string; // transfer tx hash
-  jobType?: "FullTime" | "PartTime" | "OneTime"; // default=OneTime
+  jobType?: 'FullTime' | 'PartTime' | 'OneTime'; // default=OneTime
   genre?: string; // main genre
   tags?: string[]; //tags
   toSig?: string; // sig of payee

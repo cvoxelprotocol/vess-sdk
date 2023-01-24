@@ -1,4 +1,6 @@
 import {
+  Alias,
+  BaseIDXType,
   BaseResponse,
   CustomResponse,
   EventAttendanceWithId,
@@ -9,56 +11,63 @@ import {
   OldOrganizationWIthId,
   OrganizationWIthId,
   VerifiableWorkCredentialWithId,
+  WithCeramicId,
   WorkCredentialWithId,
-} from "./interface/index.js";
+} from './interface/index.js';
 import {
   createTileDoc,
   getDataModel,
   getIDXDocs,
   getTileDoc,
+  getUniqueIDX,
   setIDX,
+  setUniqueIDX,
   updateTileDoc,
-} from "./utils/ceramicHelper.js";
-import {
-  convertDateToTimestampStr,
-  removeUndefinedFromArray,
-} from "./utils/common.js";
+} from './utils/ceramicHelper.js';
+import { convertDateToTimestampStr } from './utils/common.js';
 
-import { TileDocument } from "@ceramicnetwork/stream-tile";
-import { CeramicClient } from "@ceramicnetwork/http-client";
-import { DIDDataStore } from "@glazed/did-datastore";
-import { WorkCredential } from "./__generated__/types/WorkCredential";
-import { ModelTypesToAliases } from "@glazed/types";
-import { HeldWorkCredentials } from "./__generated__/types/HeldWorkCredentials";
-import { CreatedOrganizations } from "./__generated__/types/CreatedOrganizations";
-import { CreatedMemberships } from "./__generated__/types/CreatedMemberships";
-import { IssuedVerifiableMembershipSubjects } from "./__generated__/types/IssuedVerifiableMembershipSubjects";
-import { HeldVerifiableMembershipSubjects } from "./__generated__/types/HeldVerifiableMembershipSubjects";
-import { IssuedEvents } from "./__generated__/types/IssuedEvents";
-import { IssuedEventAttendanceVerifiableCredentials } from "./__generated__/types/IssuedEventAttendanceVerifiableCredentials.js";
-import { HeldEventAttendanceVerifiableCredentials } from "./__generated__/types/HeldEventAttendanceVerifiableCredentials";
-import { OldOrganization } from "./__generated__/types/OldOrganization";
-import { Organization } from "./__generated__/types/Organization";
-import { Membership } from "./__generated__/types/MemberShip";
+import { TileDocument } from '@ceramicnetwork/stream-tile';
+import { CeramicClient } from '@ceramicnetwork/http-client';
+import { DIDDataStore } from '@glazed/did-datastore';
+import { ModelTypesToAliases } from '@glazed/types';
+import {
+  Membership,
+  CreatedMemberships,
+  CreatedOrganizations,
+  HeldWorkCredentials,
+  WorkCredential,
+  Organization,
+  OldOrganization,
+  HeldEventAttendanceVerifiableCredentials,
+  IssuedEventAttendanceVerifiableCredentials,
+  IssuedEvents,
+  HeldVerifiableMembershipSubjects,
+  IssuedVerifiableMembershipSubjects,
+  BusinessProfile,
+  CreatedOldOrganizations,
+  SocialLinks,
+  HighlightedCredentials,
+  HeldSelfClaimedMembershipSubjects,
+  SelfClaimedMembershipSubject,
+  HeldVerifiableWorkCredentials,
+  VerifiableWorkCredential,
+  Event,
+} from './__generated__/index.js';
 import {
   EventAttendanceVerifiableCredential,
   VerifiableMembershipSubjectCredential,
-} from "./interface/eip712.js";
-import { BackupDataStore } from "./utils/backupDataStoreHelper.js";
-import { DIDSession } from "did-session";
-import { VerifiableWorkCredential } from "./__generated__/types/VerifiableWorkCredential";
-import { HeldVerifiableWorkCredentials } from "./__generated__/types/HeldVerifiableWorkCredentials";
-import { Event } from "./__generated__/types/Event";
-import { CreatedOldOrganizations } from "./__generated__/types/CreatedOldOrganizations.js";
+} from './interface/eip712.js';
+import { BackupDataStore } from './utils/backupDataStoreHelper.js';
+import { DIDSession } from 'did-session';
 
-export const PROD_CERAMIC_URL = "https://prod.cvoxelceramic.com/";
-export const TESTNET_CERAMIC_URL = "https://ceramic-clay.3boxlabs.com";
-export const TESTNET_LOCAL_URL = "http://localhost:7007/";
+export const PROD_CERAMIC_URL = 'https://prod.cvoxelceramic.com/';
+export const TESTNET_CERAMIC_URL = 'https://ceramic-clay.3boxlabs.com';
+export const TESTNET_LOCAL_URL = 'http://localhost:7007/';
 
 export type AuthResponse = {
   session: DIDSession;
   ceramic: CeramicClient;
-  env: "mainnet" | "testnet-clay";
+  env: 'mainnet' | 'testnet-clay';
 };
 
 export class BaseVESS {
@@ -66,19 +75,19 @@ export class BaseVESS {
   dataModel = getDataModel() as ModelTypesToAliases<ModelTypes>;
   dataStore = undefined as DIDDataStore<ModelTypes> | undefined;
   session = undefined as DIDSession | undefined;
-  env = "mainnet" as "mainnet" | "testnet-clay";
+  env = 'mainnet' as 'mainnet' | 'testnet-clay';
   ceramicUrl = PROD_CERAMIC_URL as string;
   backupDataStore = undefined as BackupDataStore | undefined;
 
   constructor(
-    env: "mainnet" | "testnet-clay" = "mainnet",
+    env: 'mainnet' | 'testnet-clay' = 'mainnet',
     ceramic?: CeramicClient
   ) {
     this.ceramic = ceramic;
     this.dataModel = getDataModel(env);
     this.env = env;
     this.ceramicUrl =
-      this.env === "mainnet" ? PROD_CERAMIC_URL : TESTNET_CERAMIC_URL;
+      this.env === 'mainnet' ? PROD_CERAMIC_URL : TESTNET_CERAMIC_URL;
     if (ceramic) {
       if (this.ceramic?.did?.parent) {
         this.dataStore = new DIDDataStore({
@@ -802,7 +811,7 @@ export class BaseVESS {
     if (!this.ceramic || !this.ceramic?.did?.parent || !this.backupDataStore) {
       return {
         status: 300,
-        result: "You need to call connect first",
+        result: 'You need to call connect first',
       };
     }
     try {
@@ -817,7 +826,7 @@ export class BaseVESS {
       return {
         status: 300,
         error: error,
-        result: "Failed to Update Work Credential",
+        result: 'Failed to Update Work Credential',
       };
     }
   };
@@ -832,7 +841,7 @@ export class BaseVESS {
     if (!this.ceramic || !this.ceramic?.did?.parent || !this.backupDataStore) {
       return {
         status: 300,
-        result: "You need to call connect first",
+        result: 'You need to call connect first',
       };
     }
     try {
@@ -847,7 +856,7 @@ export class BaseVESS {
       return {
         status: 300,
         error: error,
-        result: "Failed to Update Event",
+        result: 'Failed to Update Event',
       };
     }
   };
@@ -865,7 +874,7 @@ export class BaseVESS {
     if (!this.ceramic || !this.ceramic?.did?.parent || !this.backupDataStore) {
       return {
         status: 300,
-        result: "You need to call connect first",
+        result: 'You need to call connect first',
       };
     }
     try {
@@ -880,7 +889,7 @@ export class BaseVESS {
       return {
         status: 300,
         error: error,
-        result: "Failed to Update Event",
+        result: 'Failed to Update Event',
       };
     }
   };
@@ -898,18 +907,18 @@ export class BaseVESS {
     if (!this.dataStore || !this.ceramic?.did?.parent)
       return {
         status: 300,
-        result: "You need to call connect first",
+        result: 'You need to call connect first',
       };
     try {
       const heldWorkCredentials = await this.dataStore.get<
-        "heldWorkCredentials",
+        'heldWorkCredentials',
         HeldWorkCredentials
-      >("heldWorkCredentials", this.ceramic?.did?.parent);
+      >('heldWorkCredentials', this.ceramic?.did?.parent);
       const workCRDLs = heldWorkCredentials?.held ?? [];
       const updatedCredentails = workCRDLs.filter(
         (c) => !contentIds.includes(c)
       );
-      await this.dataStore.set("heldWorkCredentials", {
+      await this.dataStore.set('heldWorkCredentials', {
         held: updatedCredentails,
       });
       return {
@@ -919,7 +928,7 @@ export class BaseVESS {
       return {
         status: 300,
         error: error,
-        result: "Failed to Delete Work Credential",
+        result: 'Failed to Delete Work Credential',
       };
     }
   };
@@ -932,9 +941,9 @@ export class BaseVESS {
     const dataStore =
       this.dataStore || new DIDDataStore({ ceramic, model: this.dataModel });
     const HeldWorkCredentials = await dataStore.get<
-      "heldWorkCredentials",
+      'heldWorkCredentials',
       HeldWorkCredentials
-    >("heldWorkCredentials", did);
+    >('heldWorkCredentials', did);
     return !HeldWorkCredentials?.held ? [] : HeldWorkCredentials?.held;
   };
 
@@ -951,9 +960,9 @@ export class BaseVESS {
         id: did,
       });
     const HeldEventAttendanceVerifiableCredentials = await dataStore.get<
-      "HeldEventAttendanceVerifiableCredentials",
+      'HeldEventAttendanceVerifiableCredentials',
       HeldEventAttendanceVerifiableCredentials
-    >("HeldEventAttendanceVerifiableCredentials", did);
+    >('HeldEventAttendanceVerifiableCredentials', did);
     return !HeldEventAttendanceVerifiableCredentials?.held
       ? []
       : HeldEventAttendanceVerifiableCredentials?.held;

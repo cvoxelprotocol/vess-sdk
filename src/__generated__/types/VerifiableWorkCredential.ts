@@ -6,7 +6,7 @@
  */
 
 export interface VerifiableWorkCredential {
-  "@context": string[];
+  '@context': string[];
   type: string[];
   id: string;
   issuer: {

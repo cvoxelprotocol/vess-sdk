@@ -9,7 +9,7 @@ import {
   DeliverableItem,
   Signatures,
   Transaction,
-} from "./VerifiableWorkCredential.js";
+} from './VerifiableWorkCredential.js';
 
 export type CreatedAt = string;
 

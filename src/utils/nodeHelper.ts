@@ -1,15 +1,14 @@
-import { ethers } from "ethers";
-import { AccountId } from "caip";
-import { createDIDKey } from "did-session";
-import { randomBytes } from "ethers/lib/utils.js";
+import { AccountId } from 'caip';
+import { createDIDKey } from 'did-session';
+import { randomBytes } from 'ethers/lib/utils.js';
 import {
   Cacao,
   SiweMessage,
   AuthMethodOpts,
   AuthMethod,
-} from "@didtools/cacao";
-import { randomString } from "@stablelib/random";
-import { SignSIWE } from "../interface/kms";
+} from '@didtools/cacao';
+import { randomString } from '@stablelib/random';
+import { SignSIWE } from '../interface/kms.js';
 
 // temporary solution for using in backend
 export const getTempAuthMethod = async (
@@ -29,10 +28,10 @@ const createTempCACAO = async (
   signSIWE: SignSIWE
 ): Promise<Cacao> => {
   const accountId = new AccountId({
-    chainId: "eip155:1",
+    chainId: 'eip155:1',
     address: address.toLowerCase(),
   });
-  const VERSION = "1";
+  const VERSION = '1';
   const now = new Date();
   const oneDayLater = new Date(now.getTime() + 24 * 60 * 60 * 1000);
   const keySeed = randomBytes(32);
@@ -43,7 +42,7 @@ const createTempCACAO = async (
     address: accountId.address,
     statement:
       opts.statement ??
-      "Give this application access to some of your data on Ceramic",
+      'Give this application access to some of your data on Ceramic',
     uri: opts.uri || didKey.id,
     version: VERSION,
     nonce: opts.nonce ?? randomString(10),
