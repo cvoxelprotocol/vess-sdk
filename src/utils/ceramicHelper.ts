@@ -92,6 +92,18 @@ export const setIDX = async <T extends BaseIDXType, K extends Alias>(
   }
 };
 
+export const setUniqueIDX = async <T, K extends Alias>(
+  content: T,
+  ceramic: CeramicClient | undefined,
+  dataStore: DIDDataStore<ModelTypes> | undefined,
+  modelName: K
+): Promise<void> => {
+  if (!dataStore || !ceramic?.did?.parent) {
+    throw new Error('You need to call connect first');
+  }
+  await dataStore.set(modelName, content);
+};
+
 export const getTileDoc = async <T>(
   streamId: string,
   ceramic: CeramicClient
@@ -134,6 +146,20 @@ export const getIDXDocs = async <T extends BaseIDXType, K extends Alias, U>(
     // throw new Error("Failed to Get IDX");
   }
 };
+
+export const getUniqueIDX = async <T, K extends Alias>(
+  dataStore: DIDDataStore<ModelTypes>,
+  modelName: K,
+  did?: string
+): Promise<T | null> => {
+  try {
+    if (!did) {
+      throw new Error('You need to call connect first');
+    }
+    return await dataStore.get<K, T>(modelName, did);
+  } catch (error) {
+    console.error(error);
+    throw new Error('Failed to Get IDX');
   }
 };
 
