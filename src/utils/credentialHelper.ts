@@ -31,7 +31,7 @@ import { getPkhDIDFromAddress } from './ceramicHelper.js';
 export const createVerifiableCredential = async <
   T extends VerifiableCredential
 >(
-  address: string,
+  issuerAddress: string,
   id: string,
   vcType: VerifiableCredentialSchemaType,
   subject: CredentialSubject,
@@ -43,7 +43,7 @@ export const createVerifiableCredential = async <
   let expirationDate = new Date();
   expirationDate.setFullYear(expirationDate.getFullYear() + 100);
 
-  const issuerDID = getPkhDIDFromAddress(address);
+  const issuerDID = getPkhDIDFromAddress(issuerAddress);
   const baseContexts = [DEFAULT_CONTEXT, EIP712_CONTEXT];
 
   let credential: W3CCredential = {
@@ -54,7 +54,7 @@ export const createVerifiableCredential = async <
     id: id,
     issuer: {
       id: issuerDID,
-      ethereumAddress: address,
+      ethereumAddress: issuerAddress,
     },
     credentialSubject: subject,
     credentialSchema: {
@@ -90,7 +90,6 @@ export const verifyVerifiableCredential = async <
     { CredentialSubject: vcType.typedData },
     credential.proof.proofValue,
     async (data: EIP712TypedData<EIP712MessageTypes>, proofValue: string) => {
-      // Replace this fuction with your own signing code
       return recoverTypedSignature({
         data: data,
         signature: proofValue,

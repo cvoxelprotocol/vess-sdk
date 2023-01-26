@@ -211,7 +211,7 @@ export type AliasTypes = typeof AliasType[keyof typeof AliasType];
 export type Alias = keyof ModelTypes['definitions'];
 
 export type BaseResponse = {
-  status: 200 | 300;
+  status: 200 | 300 | 500;
   result?: string;
   error?: any;
 };

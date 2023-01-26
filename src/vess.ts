@@ -187,18 +187,16 @@ export class VESS extends BaseVESS {
 
   issueMembershipSubject = async (
     params: CredentialParam<VerifiableMembershipSubject>
-  ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
+  ): Promise<CustomResponse<{ streamIds: string[] }>> => {
     if (
       !this.ceramic ||
       !this.ceramic?.did?.parent ||
       !this.dataStore ||
       !this.backupDataStore
     ) {
-      return {
-        status: 300,
-        result: 'You need to call connect first',
-        streamId: undefined,
-      };
+      throw new Error(
+        `You need to call connect first: ${this.ceramic} | ${this.dataStore}`
+      );
     }
 
     try {
@@ -230,32 +228,30 @@ export class VESS extends BaseVESS {
       await Promise.all([storeIDX, uploadBackup]);
       return {
         status: 200,
-        streamId: val.ceramicId,
+        streamIds: [val.ceramicId],
       };
     } catch (error) {
       return {
         status: 300,
         error: error,
         result: 'Failed to Issue Work Credential',
-        streamId: undefined,
+        streamIds: [],
       };
     }
   };
 
   issueEventAttendanceCredential = async (
     params: CredentialParam<EventAttendance>
-  ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
+  ): Promise<CustomResponse<{ streamIds: string[] }>> => {
     if (
       !this.ceramic ||
       !this.ceramic?.did?.parent ||
       !this.dataStore ||
       !this.backupDataStore
     ) {
-      return {
-        status: 300,
-        result: 'You need to call connect first',
-        streamId: undefined,
-      };
+      throw new Error(
+        `You need to call connect first: ${this.ceramic} | ${this.dataStore}`
+      );
     }
     try {
       const vc = await createEventAttendanceCredential(
@@ -285,14 +281,14 @@ export class VESS extends BaseVESS {
       await Promise.all([storeIDX, uploadBackup]);
       return {
         status: 200,
-        streamId: val.ceramicId,
+        streamIds: [val.ceramicId],
       };
     } catch (error) {
       return {
-        status: 300,
+        status: 500,
         error: error,
         result: 'Failed to Issue Work Credential',
-        streamId: undefined,
+        streamIds: [],
       };
     }
   };

@@ -226,7 +226,7 @@ export const removeCeramicPrefix = (docUrl?: string) => {
   return docUrl.replace(`ceramic://`, '');
 };
 export const addCeramicPrefix = (backupId: string) => {
-  return `ceramic://${backupId}`;
+  return backupId.startsWith('ceramic://') ? backupId : `ceramic://${backupId}`;
 };
 
 export const isDIDstring = (did: string): boolean => {
@@ -263,7 +263,6 @@ export const loadSession = async (
     });
     localStorage.setItem('ceramic-session', session.serialize());
   }
-  // console.log({ sessionStr });
   return session;
 };
 
@@ -271,11 +270,13 @@ export const removeSession = () => {
   localStorage.removeItem('ceramic-session');
 };
 
-export const hasAuthorizedSession = async () => {
+export const getAuthorizedSession = async (): Promise<string | null> => {
   const sessionStr = localStorage.getItem('ceramic-session');
   if (sessionStr) {
     const session = await DIDSession.fromSession(sessionStr);
-    return session && session.isAuthorized();
+    if (session.isAuthorized() && !session.isExpired) {
+      return sessionStr;
+    }
   }
-  return false;
+  return null;
 };
