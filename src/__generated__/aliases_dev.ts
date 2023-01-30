@@ -46,19 +46,19 @@ export const aliases = {
     HeldEventAttendanceVerifiableCredentials:
       'kjzl6cwe1jw145yx15vvsljgmovnmqofb7tz7q215na7p34h3uosjsudvfcsxbl',
     Organization:
-      'kjzl6cwe1jw149yugwzpoevb3oxxdjd3mcpn0hgh81sdizlj0gl7zrmhu44hos9',
+      'kjzl6cwe1jw145cs3qpf6jo5uc4fmm8lzag4n4owwg2wfkbk74puefhanduazoz',
     CreatedOrganizations:
-      'kjzl6cwe1jw146kovdk3ytppdl6ml7l7tgbp34s2iogqciy3oyt8sz1jhj8mreb',
+      'kjzl6cwe1jw14a0b8azrgcyheijiq03x8tfb637ld9ewlf5h1eknerr14yit3ce',
     BusinessProfile:
-      'kjzl6cwe1jw14bfay53s1g2gb1ojykfqwtrenp7isx586p66x01krqk6r6iiima',
+      'kjzl6cwe1jw14ap1rs6di96aleb9is9kosuceddt9happ9bmldkwp63j7k8yjmm',
     SocialLinks:
-      'kjzl6cwe1jw14b5mhdbo01gef0xz8jzd37rfh7wl4yog5yvjo7hbvi893hqz8cv',
+      'kjzl6cwe1jw14a2pk1woseokwi7i3vnlbtj0eudq4h761rply6p2n3w8hnnoj4z',
     HighlightedCredentials:
-      'kjzl6cwe1jw145qbl3i9oqr2g02g9sw01wo1vf2ayu89u460elbzc0mlv9o6nuz',
+      'kjzl6cwe1jw1483d5nb15t46mro980f15rl17ntorbzqno99hbo03f12yb08l77',
     SelfClaimedMembershipSubject:
-      'kjzl6cwe1jw14asjwpdvnanx5wihm7fh28m4ure7u2apbfhsc1j3yp8zyyb21z2',
+      'kjzl6cwe1jw146oyz9sft25he7bnhyz1vyl2ryjc753nmwcmqijc9zihagmvgmw',
     HeldSelfClaimedMembershipSubjects:
-      'kjzl6cwe1jw148b2gr4jtk7f1kboxvexwvha7qrk8762fe1jomzm992hpfex3b6',
+      'kjzl6cwe1jw145ekdw5eoxir4qbzxqf1n3u41fqeur2bqv1xhf7pgzk8ebdyn8u',
   },
   schemas: {
     BasicProfile:
@@ -108,19 +108,19 @@ export const aliases = {
     HeldEventAttendanceVerifiableCredentials:
       'ceramic://k3y52l7qbv1frxvrg369xlb8fwycwmwhrso3kjxuogl1846jj1fru6yjdzdzez5s0',
     Organization:
-      'ceramic://k3y52l7qbv1frxqm01jbz7wsmr4vge7ahd4ebjw271v7u5fwg4jrik8xcehp68lj4',
+      'ceramic://k3y52l7qbv1frynd5dugpvgp6crgaxninu1xoqs2ghzl3metvktikyje6mx43cz5s',
     CreatedOrganizations:
-      'ceramic://k3y52l7qbv1frynzm3x7t28n0sauv44tsrkosmjfk7cp5yonowlrhnba0oe5ct69s',
+      'ceramic://k3y52l7qbv1fry77s1s2hp0zw1tuopnkohv90ople3l2tps5i7cmemvt9v57xycjk',
     BusinessProfile:
-      'ceramic://k3y52l7qbv1frxyo8nuerufbibdmqw1jo7hpcynlmq5dzferix2kqk2icj8t7wu0w',
+      'ceramic://k3y52l7qbv1fryjygwn2rrqvfmhngcsp0yxpdghptrxv84ih3ea8qel3c5o9pn3ls',
     SocialLinks:
-      'ceramic://k3y52l7qbv1frxxmpdbfwproogmr2b5ov8pa84wtjndi8wou37bkodrjatmiw7o5c',
+      'ceramic://k3y52l7qbv1fry4ynrzmp0zwm1uulgthccn0f0yogqxdgj7knl2nmeijina7pmfb4',
     HighlightedCredentials:
-      'ceramic://k3y52l7qbv1frxsgfzcy51us9h9n8cdjliver3rovvf4j2fdcs0om92sg8etaa2v4',
+      'ceramic://k3y52l7qbv1fryj27yhhgsxgvnyku2xojw3rqzuthp59lkbau8zp9b6adf3f5b8xs',
     SelfClaimedMembershipSubject:
-      'ceramic://k3y52l7qbv1frxup5yd0chfr0b0g2mxqm2ni5lehjo8u7h8jtpr0jzz79ufuvicxs',
+      'ceramic://k3y52l7qbv1frybxuxti44dwz9i4l9lgej0ypv9b4i1yi6g2x5xw9peeb8eck7mrk',
     HeldSelfClaimedMembershipSubjects:
-      'ceramic://k3y52l7qbv1frxoek4jft6ochdde5ksbm8v0ifnylegqjieid9rqh1vo5zg3kijgg',
+      'ceramic://k3y52l7qbv1fry23780744ctkucm6cho2yds0bj6t8raitdxhu6v85p9o5cdh53pc',
   },
   tiles: {},
 };

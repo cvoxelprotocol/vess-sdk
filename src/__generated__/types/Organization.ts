@@ -21,6 +21,10 @@ export interface Organization {
   desc?: string;
   icon?: string;
   coverImage?: string;
+  cardImage?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  optionColor?: string;
   links?: Links;
   tags?: string[];
   orbisSocialGroupId?: string;

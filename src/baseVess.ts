@@ -6,6 +6,7 @@ import {
   EventAttendanceWithId,
   EventWithId,
   MembershipSubjectWithId,
+  MembershipSubjectWithOrg,
   MembershipWithId,
   ModelTypes,
   OldOrganizationWIthId,
@@ -219,6 +220,24 @@ export class BaseVESS {
       did
     );
   };
+  /**
+   * Get {did}'s business profile
+   * @param did
+   * @returns BusinessProfile
+   */
+  getHighlightedCredentials = async (
+    did?: string
+  ): Promise<HighlightedCredentials | null> => {
+    if (!did) return null;
+    const ceramic = this.ceramic || new CeramicClient(this.ceramicUrl);
+    const dataStore =
+      this.dataStore || new DIDDataStore({ ceramic, model: this.dataModel });
+    return await getUniqueIDX<HighlightedCredentials, 'HighlightedCredentials'>(
+      dataStore,
+      'HighlightedCredentials',
+      did
+    );
+  };
 
   /**
    * Get {streamId}'s orgs
@@ -345,12 +364,41 @@ export class BaseVESS {
    */
   getHeldMembershipSubjects = async (
     did?: string
-  ): Promise<MembershipSubjectWithId[]> => {
-    return await this.getIDX<
+  ): Promise<MembershipSubjectWithOrg[]> => {
+    const res = await this.getIDX<
       HeldVerifiableMembershipSubjects,
       'HeldVerifiableMembershipSubjects',
       VerifiableMembershipSubjectCredential
     >('HeldVerifiableMembershipSubjects', did);
+    let membershipSubjectWithOrgsPromises: Promise<MembershipSubjectWithOrg>[] =
+      [];
+    for (const m of res) {
+      const promise = this.getMembershipSubjectWithOrg(m);
+      membershipSubjectWithOrgsPromises.push(promise);
+    }
+    return await Promise.all(membershipSubjectWithOrgsPromises);
+  };
+
+  getMembershipSubjectWithOrg = async (
+    m: MembershipSubjectWithId
+  ): Promise<MembershipSubjectWithOrg> => {
+    const org = await this.getOrganization(m.credentialSubject.organizationId);
+    return { ...m, workspace: org };
+  };
+
+  /**
+   *
+   * @param did
+   * @returns MembershipSubjectWithId[]
+   */
+  getHeldMembershipSubjectsFromBackup = async (
+    did?: string
+  ): Promise<MembershipSubjectWithId[]> => {
+    if (!this.backupDataStore) {
+      console.log('you have to initialize backupDataStore');
+      return [];
+    }
+    return await this.backupDataStore.getHeldMembershipSubjectsFromDB(did);
   };
 
   /**
@@ -438,6 +486,21 @@ export class BaseVESS {
       'HeldEventAttendanceVerifiableCredentials',
       EventAttendanceVerifiableCredential
     >('HeldEventAttendanceVerifiableCredentials', did);
+  };
+
+  /**
+   *
+   * @param did
+   * @returns EventAttendanceWithId[]
+   */
+  getHeldEventAttendanceVerifiableCredentialsFromBackup = async (
+    did?: string
+  ): Promise<EventAttendanceWithId[]> => {
+    if (!this.backupDataStore) {
+      console.log('you have to initialize backupDataStore');
+      return [];
+    }
+    return await this.backupDataStore.getHeldEventAttendanceFromDB(did);
   };
 
   // ============================== Issue ==============================
@@ -749,8 +812,8 @@ export class BaseVESS {
         content,
         this.ceramic,
         this.dataModel,
-        'BusinessProfile',
-        ['vess', 'businessProfile']
+        'SocialLinks',
+        ['vess', 'SocialLinks']
       );
       const storeIDX = setUniqueIDX<SocialLinks, 'SocialLinks'>(
         content,

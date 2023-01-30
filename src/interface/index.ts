@@ -108,6 +108,10 @@ export type VerifiableWorkCredentialWithId =
 export type MembershipSubjectWithId =
   WithCeramicId<VerifiableMembershipSubjectCredential>;
 
+export interface MembershipSubjectWithOrg extends MembershipSubjectWithId {
+  workspace?: OrganizationWIthId;
+}
+
 export type EventAttendanceWithId =
   WithCeramicId<EventAttendanceVerifiableCredential>;
 

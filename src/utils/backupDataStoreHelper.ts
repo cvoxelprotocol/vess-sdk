@@ -1,5 +1,14 @@
 import firebase, { initializeApp, getApps } from 'firebase/app';
-import { Firestore, getFirestore } from 'firebase/firestore/lite';
+import {
+  collection,
+  DocumentData,
+  Firestore,
+  getDocs,
+  getFirestore,
+  query,
+  QueryDocumentSnapshot,
+  where,
+} from 'firebase/firestore/lite';
 import { Functions, getFunctions, httpsCallable } from 'firebase/functions';
 import {
   EventAttendanceWithId,
@@ -257,4 +266,91 @@ export class BackupDataStore {
           reject(error);
         });
     });
+
+  getHeldMembershipSubjectsFromDB = (
+    did?: string
+  ): Promise<MembershipSubjectWithId[]> =>
+    new Promise((resolve, reject) => {
+      if (!this.firestore) return [];
+      if (!did) return [];
+      const q = query(
+        collection(this.firestore, 'membershipsubjects'),
+        where('credentialSubject.id', '==', did)
+      ).withConverter(membershipConverter);
+      getDocs(q)
+        .then((result) => {
+          const docs = result.empty
+            ? []
+            : result.docs.map((doc) => {
+                const d = doc.data() as MembershipSubjectWithId;
+                return d;
+              });
+          resolve(docs);
+        })
+        .catch((error) => {
+          reject(error);
+        });
+    });
+
+  getHeldEventAttendanceFromDB = (
+    did?: string
+  ): Promise<EventAttendanceWithId[]> =>
+    new Promise((resolve, reject) => {
+      if (!this.firestore) return [];
+      if (!did) return [];
+      const q = query(
+        collection(this.firestore, 'eventattendances'),
+        where('credentialSubject.id', '==', did)
+      ).withConverter(Eventconverter);
+      getDocs(q)
+        .then((result) => {
+          const docs = result.empty
+            ? []
+            : result.docs.map((doc) => {
+                const d = doc.data() as EventAttendanceWithId;
+                return d;
+              });
+          resolve(docs);
+        })
+        .catch((error) => {
+          reject(error);
+        });
+    });
 }
+
+const membershipConverter = {
+  toFirestore(item: MembershipSubjectWithId): DocumentData {
+    return { ...item };
+  },
+  fromFirestore(snapshot: QueryDocumentSnapshot): MembershipSubjectWithId {
+    let data = snapshot.data();
+    if (!isValidMembershipSubject(data)) {
+      console.error(data);
+      throw new Error('invalid data');
+    }
+    return { ...data };
+  },
+};
+
+const isValidMembershipSubject = (
+  data: any
+): data is MembershipSubjectWithId => {
+  return !!data;
+};
+
+const Eventconverter = {
+  toFirestore(item: EventAttendanceWithId): DocumentData {
+    return { ...item };
+  },
+  fromFirestore(snapshot: QueryDocumentSnapshot): EventAttendanceWithId {
+    let data = snapshot.data();
+    if (!isValidEvent(data)) {
+      throw new Error('invalid data');
+    }
+    return { ...data };
+  },
+};
+
+const isValidEvent = (data: any): data is EventAttendanceWithId => {
+  return !!data;
+};
