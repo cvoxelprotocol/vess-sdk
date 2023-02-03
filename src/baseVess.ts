@@ -856,8 +856,8 @@ export class BaseVESS {
         content,
         this.ceramic,
         this.dataModel,
-        'BusinessProfile',
-        ['vess', 'businessProfile']
+        'HighlightedCredentials',
+        ['vess', 'HighlightedCredentials']
       );
       const storeIDX = setUniqueIDX<
         HighlightedCredentials,
@@ -894,21 +894,22 @@ export class BaseVESS {
       };
     }
     try {
-      const val = await createTileDoc<SelfClaimedMembershipSubject>(
-        content,
-        this.ceramic,
-        this.dataModel,
-        'SelfClaimedMembershipSubject',
-        ['vess', 'Self Claimed Membership']
-      );
+      const val: WithCeramicId<SelfClaimedMembershipSubject> =
+        await createTileDoc<SelfClaimedMembershipSubject>(
+          content,
+          this.ceramic,
+          this.dataModel,
+          'SelfClaimedMembershipSubject',
+          ['vess', 'membership', 'self-claimed']
+        );
       await setIDX<
-        SelfClaimedMembershipSubject,
-        'SelfClaimedMembershipSubject'
+        HeldSelfClaimedMembershipSubjects,
+        'HeldSelfClaimedMembershipSubjects'
       >(
         [val.ceramicId],
         this.ceramic,
         this.dataStore,
-        'SelfClaimedMembershipSubject',
+        'HeldSelfClaimedMembershipSubjects',
         'held'
       );
       return {
@@ -919,7 +920,7 @@ export class BaseVESS {
       return {
         status: 300,
         error: error,
-        result: 'Failed to Issue event',
+        result: 'Failed to Issue Credentials',
         streamId: undefined,
       };
     }

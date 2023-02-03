@@ -14,7 +14,8 @@ import {
 import { convertDateToTimestampStr } from './utils/common.js';
 import {
   createEIP712WorkCredential,
-  createEventAttendanceCredential,
+  createEventAttendanceVCTileDoc,
+  createMembershipVCTileDoc,
   createVerifiableMembershipSubjectCredential,
   safeSend,
   _getEIP712WorkCredentialSubjectSignature,
@@ -23,11 +24,6 @@ import {
 import { EthereumWebAuth, getAccountId } from '@didtools/pkh-ethereum';
 import { CeramicClient } from '@ceramicnetwork/http-client';
 import { DIDDataStore } from '@glazed/did-datastore';
-
-import {
-  EventAttendanceVerifiableCredential,
-  VerifiableMembershipSubjectCredential,
-} from './interface/eip712.js';
 import { VerifiableMembershipSubject } from './__generated__/types/VerifiableMembershipSubjectCredential';
 import { EventAttendance } from './__generated__/types/EventAttendanceVerifiableCredential';
 import {
@@ -186,7 +182,7 @@ export class VESS extends BaseVESS {
   };
 
   issueMembershipSubject = async (
-    params: CredentialParam<VerifiableMembershipSubject>
+    contents: VerifiableMembershipSubject[]
   ): Promise<CustomResponse<{ streamIds: string[] }>> => {
     if (
       !this.ceramic ||
@@ -200,35 +196,35 @@ export class VESS extends BaseVESS {
     }
 
     try {
-      // TODO: sign and create verifiable credential before save data
-      const vc = await createVerifiableMembershipSubjectCredential(
-        params.content,
-        this.provider
-      );
-      const val: MembershipSubjectWithId =
-        await createTileDoc<VerifiableMembershipSubjectCredential>(
-          vc,
+      let promises: Promise<MembershipSubjectWithId>[] = [];
+      for (const content of contents) {
+        const val = createMembershipVCTileDoc(
+          content,
           this.ceramic,
           this.dataModel,
-          'VerifiableMembershipSubjectCredential',
-          ['vess', 'membershipCredential']
+          this.provider
         );
+        promises.push(val);
+      }
+      const vals = await Promise.all(promises);
+      const ids = vals.map((v) => v.ceramicId);
       const storeIDX = setIDX<
         IssuedVerifiableMembershipSubjects,
         'IssuedVerifiableMembershipSubjects'
       >(
-        [val.ceramicId],
+        ids,
         this.ceramic,
         this.dataStore,
         'IssuedVerifiableMembershipSubjects',
         'issued'
       );
 
-      const uploadBackup = this.backupDataStore.uploadMembershipSubject(val);
+      const uploadBackup =
+        this.backupDataStore.uploadMultipleMembershipSubject(vals);
       await Promise.all([storeIDX, uploadBackup]);
       return {
         status: 200,
-        streamIds: [val.ceramicId],
+        streamIds: ids,
       };
     } catch (error) {
       return {
@@ -241,7 +237,7 @@ export class VESS extends BaseVESS {
   };
 
   issueEventAttendanceCredential = async (
-    params: CredentialParam<EventAttendance>
+    contents: EventAttendance[]
   ): Promise<CustomResponse<{ streamIds: string[] }>> => {
     if (
       !this.ceramic ||
@@ -254,34 +250,35 @@ export class VESS extends BaseVESS {
       );
     }
     try {
-      const vc = await createEventAttendanceCredential(
-        params.content,
-        this.provider
-      );
-
-      const val: EventAttendanceWithId =
-        await createTileDoc<EventAttendanceVerifiableCredential>(
-          vc,
+      let promises: Promise<EventAttendanceWithId>[] = [];
+      for (const content of contents) {
+        const val = createEventAttendanceVCTileDoc(
+          content,
           this.ceramic,
           this.dataModel,
-          'EventAttendanceVerifiableCredential',
-          ['vess', 'eventAttendanceCredential']
+          this.provider
         );
+        promises.push(val);
+      }
+      const vals = await Promise.all(promises);
+      const ids = vals.map((v) => v.ceramicId);
+
       const storeIDX = setIDX<
         IssuedEventAttendanceVerifiableCredentials,
         'IssuedEventAttendanceVerifiableCredentials'
       >(
-        [val.ceramicId],
+        ids,
         this.ceramic,
         this.dataStore,
         'IssuedEventAttendanceVerifiableCredentials',
         'issued'
       );
-      const uploadBackup = this.backupDataStore.uploadEventAttendance(val);
-      await Promise.all([storeIDX, uploadBackup]);
+      const uploadBackups =
+        this.backupDataStore.uploadMultipleEventAttendances(vals);
+      await Promise.all([storeIDX, uploadBackups]);
       return {
         status: 200,
-        streamIds: [val.ceramicId],
+        streamIds: ids,
       };
     } catch (error) {
       return {

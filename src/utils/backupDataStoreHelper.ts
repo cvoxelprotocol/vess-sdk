@@ -203,6 +203,27 @@ export class BackupDataStore {
           reject(error);
         });
     });
+  uploadMultipleMembershipSubject = (
+    param: MembershipSubjectWithId[]
+  ): Promise<{ [x: string]: string }> =>
+    new Promise((resolve, reject) => {
+      if (!this.functions) return;
+      const uploadFunc = httpsCallable<
+        { [x: string]: MembershipSubjectWithId[] },
+        { [x: string]: string }
+      >(this.functions, 'uploadMultipleMembershipSubject');
+      uploadFunc({
+        subjects: param,
+      })
+        .then((result) => {
+          const { status } = result.data;
+          resolve({ status: status });
+        })
+        .catch((error) => {
+          console.log({ error });
+          reject(error);
+        });
+    });
 
   uploadEvent = (param: EventWithId): Promise<{ [x: string]: string }> =>
     new Promise((resolve, reject) => {
@@ -235,6 +256,28 @@ export class BackupDataStore {
       >(this.functions, 'uploadEventAttendance');
       uploadFunc({
         event: param,
+      })
+        .then((result) => {
+          const { status } = result.data;
+          resolve({ status: status });
+        })
+        .catch((error) => {
+          console.log({ error });
+          reject(error);
+        });
+    });
+
+  uploadMultipleEventAttendances = (
+    param: EventAttendanceWithId[]
+  ): Promise<{ [x: string]: string }> =>
+    new Promise((resolve, reject) => {
+      if (!this.functions) return;
+      const uploadFunc = httpsCallable<
+        { [x: string]: EventAttendanceWithId[] },
+        { [x: string]: string }
+      >(this.functions, 'uploadMultipleEventAttendances');
+      uploadFunc({
+        events: param,
       })
         .then((result) => {
           const { status } = result.data;

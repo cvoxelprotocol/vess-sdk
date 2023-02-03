@@ -7,6 +7,7 @@ import {
 import {
   EventAttendanceWithId,
   MembershipSubjectWithId,
+  ModelTypes,
 } from '../interface/index.js';
 import {
   CLIENT_EIP712_TYPE,
@@ -38,6 +39,44 @@ import {
   verifyVerifiableCredential,
 } from './credentialHelper.js';
 import { VESS_CREDENTIALS } from '../constants/verifiableCredentials.js';
+import { createTileDoc } from './ceramicHelper.js';
+import { CeramicClient } from '@ceramicnetwork/http-client';
+import { ModelTypesToAliases } from '@glazed/types';
+
+export const createMembershipVCTileDoc = async (
+  content: VerifiableMembershipSubject,
+  ceramic: CeramicClient | undefined,
+  dataModel: ModelTypesToAliases<ModelTypes>,
+  provider?: any
+): Promise<MembershipSubjectWithId> => {
+  const vc = await createVerifiableMembershipSubjectCredential(
+    content,
+    provider
+  );
+  return createTileDoc<VerifiableMembershipSubjectCredential>(
+    vc,
+    ceramic,
+    dataModel,
+    'VerifiableMembershipSubjectCredential',
+    ['vess', 'membershipCredential']
+  );
+};
+
+export const createEventAttendanceVCTileDoc = async (
+  content: EventAttendance,
+  ceramic: CeramicClient | undefined,
+  dataModel: ModelTypesToAliases<ModelTypes>,
+  provider?: any
+): Promise<EventAttendanceWithId> => {
+  const vc = await createEventAttendanceCredential(content, provider);
+  return createTileDoc<EventAttendanceVerifiableCredential>(
+    vc,
+    ceramic,
+    dataModel,
+    'EventAttendanceVerifiableCredential',
+    ['vess', 'eventAttendanceCredential']
+  );
+};
 
 export const createVerifiableMembershipSubjectCredential = async (
   membershipSubject: VerifiableMembershipSubject,
