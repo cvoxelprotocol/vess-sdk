@@ -57,6 +57,8 @@ export interface VerifiableMembershipSubject {
   membershipIcon?: string;
   organizationId?: string;
   membershipId?: string;
+  startDate?: string;
+  endDate?: string;
   [k: string]: unknown;
 }
 export interface BasicEvidence {

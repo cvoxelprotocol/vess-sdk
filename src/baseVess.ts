@@ -1008,7 +1008,8 @@ export class BaseVESS {
       };
     }
     try {
-      await updateTileDoc<Organization>(this.ceramic, newItem);
+      const { ceramicId, ...content } = newItem;
+      await updateTileDoc<Organization>(this.ceramic, ceramicId, content);
       if (saveBackup) {
         await this.backupDataStore.uploadOrg({ ...newItem });
       }

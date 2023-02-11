@@ -165,18 +165,19 @@ export const getUniqueIDX = async <T, K extends Alias>(
 
 export const updateTileDoc = async <T>(
   ceramic: CeramicClient | undefined,
-  content: WithCeramicId<T>
+  streamId: string,
+  content: T
 ): Promise<void> => {
   if (!ceramic || !ceramic?.did?.parent) {
     throw new Error('You need to call connect first');
   }
   try {
-    const doc = await TileDocument.load<T>(ceramic, content.ceramicId);
-    if (!doc.content) throw new Error(`No Item Found: ${content.ceramicId}`);
+    const doc = await TileDocument.load<T>(ceramic, streamId);
+    if (!doc.content) throw new Error(`No Item Found: ${streamId}`);
     await doc.update(content);
   } catch (error) {
     console.error(error);
-    throw new Error('Failed to Create Tile Doc');
+    throw new Error('Failed to Update Tile Doc');
   }
 };
 

@@ -1,9 +1,14 @@
-import { CustomResponse, WithCeramicId } from './interface/index.js';
+import {
+  BaseResponse,
+  CustomResponse,
+  WithCeramicId,
+} from './interface/index.js';
 import {
   createTileDoc,
   getDataModel,
   removeSession,
   setIDX,
+  updateTileDoc,
 } from './utils/ceramicHelper.js';
 import { _getEIP712WorkCredentialSubjectSignature } from './utils/providerHelper.js';
 import { CeramicClient } from '@ceramicnetwork/http-client';
@@ -122,6 +127,39 @@ export class VessForKMS extends BaseVESS {
       return {
         status: 200,
         streamIds: streamIds,
+      };
+    } catch (error) {
+      throw new Error(`Failed to Issue Credential:${error}`);
+    }
+  };
+
+  updateMembershipSubjectWithKMS = async (
+    vcs: WithCeramicId<VerifiableMembershipSubjectCredential>[]
+  ): Promise<BaseResponse> => {
+    if (
+      !this.ceramic ||
+      !this.ceramic?.did?.parent ||
+      !this.dataStore ||
+      !this.backupDataStore
+    ) {
+      throw new Error(
+        `You need to call connect first: ${this.ceramic} | ${this.dataStore}`
+      );
+    }
+    try {
+      let tileDocPromises: Promise<void>[] = [];
+      for (const vc of vcs) {
+        const { ceramicId, ...content } = vc;
+        const promise = updateTileDoc<VerifiableMembershipSubjectCredential>(
+          this.ceramic,
+          ceramicId,
+          content
+        );
+        tileDocPromises.push(promise);
+      }
+      await Promise.all(tileDocPromises);
+      return {
+        status: 200,
       };
     } catch (error) {
       throw new Error(`Failed to Issue Credential:${error}`);
