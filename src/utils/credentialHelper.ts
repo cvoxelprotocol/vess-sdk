@@ -1,6 +1,7 @@
 import {
   recoverTypedSignature,
   SignTypedDataVersion,
+  TypedDataUtils,
 } from '@metamask/eth-sig-util';
 import { utils } from 'ethers';
 import {
@@ -19,6 +20,7 @@ import {
   ISSUER_EIP712_TYPE,
   Proof,
   SignTypedData,
+  SignTypedDataForNode,
   VerifiableCredential,
   VERIFIABLE_CREDENTIAL_PRIMARY_TYPE,
   VERIFIABLE_CREDENTIAL_W3C_TYPE,
@@ -27,6 +29,60 @@ import {
   W3CCredentialTypedData,
 } from '../interface/eip712.js';
 import { getPkhDIDFromAddress } from './ceramicHelper.js';
+
+export const createVerifiableCredentialForNode = async <
+  T extends VerifiableCredential
+>(
+  issuerAddress: string,
+  id: string,
+  vcType: VerifiableCredentialSchemaType,
+  subject: CredentialSubject,
+  signTypedData: SignTypedDataForNode,
+  customContext?: string[],
+  expiration?: string
+): Promise<T> => {
+  let issuanceDate = Date.now();
+  let expirationDate = new Date();
+  expirationDate.setFullYear(expirationDate.getFullYear() + 100);
+
+  const issuerDID = getPkhDIDFromAddress(issuerAddress);
+  const baseContexts = [DEFAULT_CONTEXT, EIP712_CONTEXT];
+
+  let credential: W3CCredential = {
+    '@context': customContext
+      ? baseContexts.concat(customContext)
+      : baseContexts,
+    type: [DEFAULT_VC_TYPE, vcType.vcType],
+    id: id,
+    issuer: {
+      id: issuerDID,
+      ethereumAddress: issuerAddress,
+    },
+    credentialSubject: subject,
+    credentialSchema: {
+      id: vcType.schema,
+      type: 'Eip712SchemaValidator2021',
+    },
+    issuanceDate: new Date(issuanceDate).toISOString(),
+    expirationDate: new Date(expiration || expirationDate).toISOString(),
+  };
+
+  const domain = getDefaultDomainTypedData(vcType.domain);
+
+  const vc: VerifiableCredential = await createEIP712VerifiableCredential(
+    domain,
+    credential,
+    { CredentialSubject: vcType.typedData },
+    async (data) => {
+      const messagehash = TypedDataUtils.eip712Hash(
+        data,
+        SignTypedDataVersion.V4
+      ).toString('hex');
+      return await signTypedData(messagehash);
+    }
+  );
+  return vc as T;
+};
 
 export const createVerifiableCredential = async <
   T extends VerifiableCredential

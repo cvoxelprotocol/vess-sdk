@@ -332,6 +332,7 @@ export interface Proof {
 export type SignTypedData<T extends EIP712MessageTypes> = (
   data: EIP712TypedData<T>
 ) => Promise<string>;
+export type SignTypedDataForNode = (data: string) => Promise<string>;
 export type VerifyTypedData<T extends EIP712MessageTypes> = (
   data: EIP712TypedData<T>,
   proofValue: string

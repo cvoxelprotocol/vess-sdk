@@ -16,6 +16,7 @@ import {
   EventAttendance,
   EventAttendanceVerifiableCredential,
   SignTypedData,
+  SignTypedDataForNode,
   VerifiableMembershipSubject,
   VerifiableMembershipSubjectCredential,
 } from './interface/eip712.js';
@@ -29,7 +30,10 @@ import {
   WorkCredential,
 } from './__generated__/index.js';
 import { SignSIWE } from './interface/kms.js';
-import { createVerifiableCredential } from './utils/credentialHelper.js';
+import {
+  createVerifiableCredential,
+  createVerifiableCredentialForNode,
+} from './utils/credentialHelper.js';
 import { VESS_CREDENTIALS } from './constants/verifiableCredentials.js';
 
 export class VessForNode extends BaseVESS {
@@ -218,8 +222,8 @@ export class VessForNode extends BaseVESS {
     content: EventWithId,
     issuerAddress: string,
     holderDids: string[],
-    signTypedData: SignTypedData<EIP712MessageTypes>
-  ): Promise<CustomResponse<{ docs: EventAttendanceWithId[] }>> => {
+    signTypedData: SignTypedDataForNode
+  ): Promise<CustomResponse<{ docs: string[] }>> => {
     if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
       return {
         status: 300,
@@ -238,7 +242,7 @@ export class VessForNode extends BaseVESS {
         };
         const credentialId = `${content.ceramicId}-${did}`;
         const issuePromise =
-          createVerifiableCredential<EventAttendanceVerifiableCredential>(
+          createVerifiableCredentialForNode<EventAttendanceVerifiableCredential>(
             issuerAddress,
             credentialId,
             VESS_CREDENTIALS.EVENT_ATTENDANCE,
@@ -273,7 +277,7 @@ export class VessForNode extends BaseVESS {
       );
       return {
         status: 200,
-        docs,
+        docs: docUrls,
       };
     } catch (error) {
       return {

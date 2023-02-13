@@ -17,11 +17,13 @@ import {
 } from './interface/index.js';
 import {
   createTileDoc,
+  deleteFromIDX,
   getDataModel,
   getIDXDocs,
   getTileDoc,
   getUniqueIDX,
   setIDX,
+  setIDXWithBreaking,
   setUniqueIDX,
   updateTileDoc,
 } from './utils/ceramicHelper.js';
@@ -726,6 +728,23 @@ export class BaseVESS {
       throw new Error('Error setHeldMembershipSubjects');
     }
   };
+  setHeldMembershipSubjectsWithBreaking = async (
+    contentIds: string[]
+  ): Promise<void> => {
+    if (!this.dataStore || !this.ceramic?.did?.parent) return;
+    try {
+      await setIDXWithBreaking<'HeldVerifiableMembershipSubjects'>(
+        contentIds,
+        this.ceramic,
+        this.dataStore,
+        'HeldVerifiableMembershipSubjects',
+        'held'
+      );
+    } catch (error) {
+      console.error(error);
+      throw new Error('Error setHeldMembershipSubjects');
+    }
+  };
 
   setHeldEventAttendanceVerifiableCredentials = async (
     contentIds: string[]
@@ -1061,6 +1080,59 @@ export class BaseVESS {
         error: error,
         result: 'Failed to Delete Work Credential',
       };
+    }
+  };
+
+  deleteHeldMembershipSubjectsFromIDX = async (
+    streamId: string
+  ): Promise<BaseResponse> => {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
+      throw new Error(
+        `You need to call connect first: ${this.ceramic} | ${this.dataStore}`
+      );
+    }
+    try {
+      await deleteFromIDX<
+        HeldVerifiableMembershipSubjects,
+        'HeldVerifiableMembershipSubjects'
+      >(
+        streamId,
+        this.ceramic,
+        this.dataStore,
+        'HeldVerifiableMembershipSubjects',
+        'held'
+      );
+      return {
+        status: 200,
+      };
+    } catch (error) {
+      throw new Error(`Failed to Issue Credential:${error}`);
+    }
+  };
+  deleteHeldEventAttendanceFromIDX = async (
+    streamId: string
+  ): Promise<BaseResponse> => {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
+      throw new Error(
+        `You need to call connect first: ${this.ceramic} | ${this.dataStore}`
+      );
+    }
+    try {
+      await deleteFromIDX<
+        HeldEventAttendanceVerifiableCredentials,
+        'HeldEventAttendanceVerifiableCredentials'
+      >(
+        streamId,
+        this.ceramic,
+        this.dataStore,
+        'HeldEventAttendanceVerifiableCredentials',
+        'held'
+      );
+      return {
+        status: 200,
+      };
+    } catch (error) {
+      throw new Error(`Failed to Issue Credential:${error}`);
     }
   };
 

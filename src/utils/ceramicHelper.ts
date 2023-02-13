@@ -91,6 +91,69 @@ export const setIDX = async <T extends BaseIDXType, K extends Alias>(
     return;
   }
 };
+export const deleteFromIDX = async <T extends BaseIDXType, K extends Alias>(
+  contentId: string,
+  ceramic: CeramicClient | undefined,
+  dataStore: DIDDataStore<ModelTypes> | undefined,
+  modelName: K,
+  defautParamName: 'issued' | 'created' | 'held'
+): Promise<void> => {
+  if (!dataStore || !ceramic?.did?.parent) {
+    throw new Error('You need to call connect first');
+  }
+  const val = await dataStore.get<K, T>(modelName, ceramic?.did?.parent);
+  const currentVals = val?.issued ?? val?.created ?? val?.held ?? [];
+  const updatedVals = currentVals.filter(
+    (v) => removeCeramicPrefix(v) !== removeCeramicPrefix(contentId)
+  );
+  if (defautParamName === 'created') {
+    await dataStore.set(modelName, {
+      created: updatedVals,
+    });
+    return;
+  }
+  if (defautParamName === 'issued') {
+    await dataStore.set(modelName, {
+      issued: updatedVals,
+    });
+    return;
+  }
+  if (defautParamName === 'held') {
+    await dataStore.set(modelName, {
+      held: updatedVals,
+    });
+    return;
+  }
+};
+export const setIDXWithBreaking = async <K extends Alias>(
+  contentId: string[],
+  ceramic: CeramicClient | undefined,
+  dataStore: DIDDataStore<ModelTypes> | undefined,
+  modelName: K,
+  defautParamName: 'issued' | 'created' | 'held'
+): Promise<void> => {
+  if (!dataStore || !ceramic?.did?.parent) {
+    throw new Error('You need to call connect first');
+  }
+  if (defautParamName === 'created') {
+    await dataStore.set(modelName, {
+      created: contentId,
+    });
+    return;
+  }
+  if (defautParamName === 'issued') {
+    await dataStore.set(modelName, {
+      issued: contentId,
+    });
+    return;
+  }
+  if (defautParamName === 'held') {
+    await dataStore.set(modelName, {
+      held: contentId,
+    });
+    return;
+  }
+};
 
 export const setUniqueIDX = async <T, K extends Alias>(
   content: T,
