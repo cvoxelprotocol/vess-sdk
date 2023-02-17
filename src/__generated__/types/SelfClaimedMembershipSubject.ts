@@ -13,6 +13,8 @@ export interface SelfClaimedMembershipSubject {
   membershipIcon?: string;
   organizationId?: string;
   membershipId?: string;
+  startDate?: string;
+  endDate?: string;
   evidence?: {
     id: string;
     type: string[];
