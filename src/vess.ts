@@ -16,7 +16,6 @@ import {
   createEIP712WorkCredential,
   createEventAttendanceVCTileDoc,
   createMembershipVCTileDoc,
-  createVerifiableMembershipSubjectCredential,
   safeSend,
   _getEIP712WorkCredentialSubjectSignature,
 } from './utils/providerHelper.js';

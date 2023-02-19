@@ -21,3 +21,6 @@ export * from './types/SelfClaimedMembershipSubject.js';
 export * from './types/HighlightedCredentials.js';
 export * from './types/HeldSelfClaimedMembershipSubjects.js';
 export * from './types/CreatedOldOrganizations.js';
+export * from './types/Tx.js';
+export * from './types/TaskCredential.js';
+export * from './types/HeldTaskCredentials.js';

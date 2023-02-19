@@ -29,6 +29,9 @@ import {
   HeldVerifiableMembershipSubjects,
   HeldSelfClaimedMembershipSubjects,
   HeldEventAttendanceVerifiableCredentials,
+  TaskCredential,
+  Tx,
+  HeldTaskCredentials,
 } from '../__generated__/index.js';
 
 export type OldWorkCredential = {
@@ -147,6 +150,9 @@ export type ModelTypes = ModelTypeAliases<
     HighlightedCredentials: HighlightedCredentials;
     SelfClaimedMembershipSubject: SelfClaimedMembershipSubject;
     HeldSelfClaimedMembershipSubjects: HeldSelfClaimedMembershipSubjects;
+    TaskCredential: TaskCredential;
+    Tx: Tx;
+    HeldTaskCredentials: HeldTaskCredentials;
   },
   {
     workCredential: 'WorkCredential';
@@ -176,6 +182,9 @@ export type ModelTypes = ModelTypeAliases<
     HighlightedCredentials: 'HighlightedCredentials';
     SelfClaimedMembershipSubject: 'SelfClaimedMembershipSubject';
     HeldSelfClaimedMembershipSubjects: 'HeldSelfClaimedMembershipSubjects';
+    TaskCredential: 'TaskCredential';
+    Tx: 'Tx';
+    HeldTaskCredentials: 'HeldTaskCredentials';
   }
 >;
 
@@ -210,6 +219,9 @@ const AliasType = {
   HighlightedCredentials: 'HighlightedCredentials',
   SelfClaimedMembershipSubject: 'SelfClaimedMembershipSubject',
   HeldSelfClaimedMembershipSubjects: 'HeldSelfClaimedMembershipSubjects',
+  TaskCredential: 'TaskCredential',
+  Tx: 'Tx',
+  HeldTaskCredentials: 'HeldTaskCredentials',
 } as const;
 export type AliasTypes = typeof AliasType[keyof typeof AliasType];
 export type Alias = keyof ModelTypes['definitions'];

@@ -55,6 +55,8 @@ import {
   HeldVerifiableWorkCredentials,
   VerifiableWorkCredential,
   Event,
+  TaskCredential,
+  HeldTaskCredentials,
 } from './__generated__/index.js';
 import {
   EventAttendanceVerifiableCredential,
@@ -145,6 +147,21 @@ export class BaseVESS {
   /**
    * Get {streamId}'s tile doc
    * @param streamId
+   * @returns WorkCredentialWithId | null
+   */
+  getTaskCredential = async (
+    streamId?: string
+  ): Promise<WithCeramicId<TaskCredential> | null> => {
+    if (!streamId) return null;
+    return await getTileDoc<TaskCredential>(
+      streamId,
+      this.ceramic || new CeramicClient(this.ceramicUrl)
+    );
+  };
+
+  /**
+   * Get {streamId}'s tile doc
+   * @param streamId
    * @returns VerifiableWorkCredentialWithId | null
    */
   getVerifiableWorkCredential = async (
@@ -185,6 +202,22 @@ export class BaseVESS {
       'heldVerifiableWorkCredentials',
       VerifiableWorkCredential
     >('heldVerifiableWorkCredentials', did);
+  };
+
+  /**
+   *
+   * @param did
+   * @returns MembershipSubjectWithId[]
+   */
+  getHeldTaskCredentials = async (
+    did?: string
+  ): Promise<WithCeramicId<TaskCredential>[]> => {
+    if (!did) return [];
+    return await this.getIDX<
+      HeldTaskCredentials,
+      'HeldTaskCredentials',
+      TaskCredential
+    >('HeldTaskCredentials', did);
   };
 
   /**
@@ -767,6 +800,50 @@ export class BaseVESS {
     }
   };
 
+  createTask = async (
+    content: TaskCredential
+  ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
+    if (
+      !this.ceramic ||
+      !this.ceramic?.did?.parent ||
+      !this.dataStore ||
+      !this.backupDataStore
+    ) {
+      return {
+        status: 300,
+        result: 'You need to call connect first',
+        streamId: undefined,
+      };
+    }
+    try {
+      const val = await createTileDoc<TaskCredential>(
+        content,
+        this.ceramic,
+        this.dataModel,
+        'TaskCredential',
+        ['vess', 'task']
+      );
+      await setIDX<HeldTaskCredentials, 'HeldTaskCredentials'>(
+        [val.ceramicId],
+        this.ceramic,
+        this.dataStore,
+        'HeldTaskCredentials',
+        'held'
+      );
+      return {
+        status: 200,
+        streamId: val.ceramicId,
+      };
+    } catch (error) {
+      return {
+        status: 300,
+        error: error,
+        result: 'Failed to create Task',
+        streamId: undefined,
+      };
+    }
+  };
+
   createBusinessProfile = async (
     content: BusinessProfile
   ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
@@ -1040,6 +1117,30 @@ export class BaseVESS {
         status: 300,
         error: error,
         result: 'Failed to Update Event',
+      };
+    }
+  };
+
+  updateTask = async (
+    newItem: WithCeramicId<TaskCredential>
+  ): Promise<BaseResponse> => {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.backupDataStore) {
+      return {
+        status: 300,
+        result: 'You need to call connect first',
+      };
+    }
+    try {
+      const { ceramicId, ...content } = newItem;
+      await updateTileDoc<TaskCredential>(this.ceramic, ceramicId, content);
+      return {
+        status: 200,
+      };
+    } catch (error) {
+      return {
+        status: 300,
+        error: error,
+        result: 'Failed to Update Task',
       };
     }
   };

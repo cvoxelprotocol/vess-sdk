@@ -1,5 +1,5 @@
-import { DeliverableItem, Transaction } from './__generated__';
-import { Client, Work } from './__generated__/types/WorkCredential';
+import { Client, DeliverableItem, Transaction } from './__generated__';
+import { Work } from './__generated__/types/WorkCredential';
 
 export const formatTransaction = (
   txHash: string,
