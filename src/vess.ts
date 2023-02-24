@@ -39,7 +39,7 @@ import {
   IssuedEventAttendanceVerifiableCredentials,
   IssuedVerifiableMembershipSubjects,
 } from './__generated__/index.js';
-import { CredentialParam } from './interface/kms.js';
+import { DIDSession } from 'did-session';
 
 export class VESS extends BaseVESS {
   provider = undefined as any | undefined;
@@ -118,6 +118,30 @@ export class VESS extends BaseVESS {
     this.session = undefined;
     this.dataStore = undefined;
     this.ceramic = undefined;
+  };
+
+  autoConnect = async (
+    env: 'mainnet' | 'testnet-clay' = 'mainnet'
+  ): Promise<AuthResponse | null> => {
+    const sessionStr = localStorage.getItem('ceramic-session');
+    if (sessionStr) {
+      const session = await DIDSession.fromSession(sessionStr);
+      this.dataModel = getDataModel(env);
+      this.env = env;
+      this.ceramicUrl =
+        this.env === 'mainnet' ? PROD_CERAMIC_URL : TESTNET_CERAMIC_URL;
+      this.session = session;
+      this.ceramic = new CeramicClient(this.ceramicUrl);
+      this.ceramic.did = this.session.did;
+      this.dataStore = new DIDDataStore({
+        ceramic: this.ceramic,
+        model: this.dataModel,
+        id: this.ceramic?.did?.parent,
+      });
+      console.log(`ceramic authorized! env: ${this.env}`);
+      return { session: this.session, ceramic: this.ceramic, env: this.env };
+    }
+    return null;
   };
 
   // ============================== Issue ==============================
