@@ -19,7 +19,7 @@ import {
   safeSend,
   _getEIP712WorkCredentialSubjectSignature,
 } from './utils/providerHelper.js';
-
+import { AccountId } from 'caip';
 import { EthereumWebAuth, getAccountId } from '@didtools/pkh-ethereum';
 import { CeramicClient } from '@ceramicnetwork/http-client';
 import { DIDDataStore } from '@glazed/did-datastore';
@@ -53,6 +53,7 @@ export class VESS extends BaseVESS {
   }
 
   connect = async (
+    address: string,
     provider?: any,
     env: 'mainnet' | 'testnet-clay' = 'mainnet'
   ): Promise<AuthResponse> => {
@@ -76,22 +77,13 @@ export class VESS extends BaseVESS {
     }
 
     this.provider = provider;
-    let accounts: string[] = [];
-    try {
-      accounts = await safeSend(this.provider, 'eth_accounts', []);
-    } catch (e) {
-      console.log(e);
-      throw new Error(
-        `Error enabling Ethereum provider. Message: ${JSON.stringify(e)}`
-      );
-    }
-    this.account = accounts[0];
+    this.account = address;
 
     try {
-      const accountId = await getAccountId(
-        this.provider,
-        this.account.toLowerCase()
-      );
+      const accountId: AccountId = new AccountId({
+        address: this.account.toLowerCase(),
+        chainId: `eip155:1`,
+      });
       const authMethod = await EthereumWebAuth.getAuthMethod(
         this.provider,
         accountId
