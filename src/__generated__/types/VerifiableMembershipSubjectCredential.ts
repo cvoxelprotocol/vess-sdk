@@ -6,7 +6,7 @@
  */
 
 export interface VerifiableMembershipSubjectCredential {
-  "@context": string[];
+  '@context': string[];
   type: string[];
   id: string;
   issuer: {
@@ -57,6 +57,8 @@ export interface VerifiableMembershipSubject {
   membershipIcon?: string;
   organizationId?: string;
   membershipId?: string;
+  startDate?: string;
+  endDate?: string;
   [k: string]: unknown;
 }
 export interface BasicEvidence {

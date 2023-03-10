@@ -1,56 +1,69 @@
 import {
   CustomResponse,
   EventAttendanceWithId,
+  EventWithId,
   MembershipSubjectWithId,
+  MembershipWithId,
+  OrganizationWIthId,
   WorkCredentialWithId,
-} from "./interface/index.js";
-import {
-  createTileDocument,
-  getDataModel,
-  getSchema,
-} from "./utils/ceramicHelper.js";
+} from './interface/index.js';
+import { createTileDoc, getDataModel, setIDX } from './utils/ceramicHelper.js';
 
-import { CeramicClient } from "@ceramicnetwork/http-client";
-import { DIDDataStore } from "@glazed/did-datastore";
-import { WorkCredential } from "./__generated__/types/WorkCredential";
+import { CeramicClient } from '@ceramicnetwork/http-client';
+import { DIDDataStore } from '@glazed/did-datastore';
 import {
+  EIP712MessageTypes,
+  EventAttendance,
   EventAttendanceVerifiableCredential,
+  SignTypedData,
+  SignTypedDataForNode,
+  VerifiableMembershipSubject,
   VerifiableMembershipSubjectCredential,
-} from "./interface/eip712.js";
-import { ethers } from "ethers";
-import { DIDSession } from "did-session";
-import { getTempAuthMethod } from "./utils/nodeHelper.js";
-import { PROD_CERAMIC_URL, TESTNET_CERAMIC_URL, BaseVESS } from "./baseVess.js";
+} from './interface/eip712.js';
+import { DIDSession } from 'did-session';
+import { getTempAuthMethod } from './utils/nodeHelper.js';
+import { PROD_CERAMIC_URL, TESTNET_CERAMIC_URL, BaseVESS } from './baseVess.js';
+import {
+  HeldWorkCredentials,
+  IssuedEventAttendanceVerifiableCredentials,
+  IssuedVerifiableMembershipSubjects,
+  WorkCredential,
+} from './__generated__/index.js';
+import { SignSIWE } from './interface/kms.js';
+import {
+  createVerifiableCredential,
+  createVerifiableCredentialForNode,
+} from './utils/credentialHelper.js';
+import { VESS_CREDENTIALS } from './constants/verifiableCredentials.js';
 
 export class VessForNode extends BaseVESS {
-  signer = undefined as ethers.Wallet | undefined;
-
   constructor(
-    env: "mainnet" | "testnet-clay" = "mainnet",
+    env: 'mainnet' | 'testnet-clay' = 'mainnet',
     ceramic?: CeramicClient
   ) {
     super(env, ceramic);
   }
-
   connect = async (
-    signer: ethers.Wallet,
-    env: "mainnet" | "testnet-clay" = "mainnet"
+    account: string,
+    signSIWE: SignSIWE,
+    env: 'mainnet' | 'testnet-clay' = 'mainnet',
+    expirationTime?: string
   ): Promise<DIDSession> => {
     this.dataModel = getDataModel(env);
     this.env = env;
     this.ceramicUrl =
-      this.env === "mainnet" ? PROD_CERAMIC_URL : TESTNET_CERAMIC_URL;
-    const account = (await signer.getAddress()).toLowerCase();
+      this.env === 'mainnet' ? PROD_CERAMIC_URL : TESTNET_CERAMIC_URL;
 
     try {
       const authMethod = await getTempAuthMethod(
         account.toLowerCase(),
-        "app.vess.id",
-        signer
+        'app.vess.id',
+        signSIWE
       );
 
       const session = await DIDSession.authorize(authMethod, {
-        resources: ["ceramic://*"],
+        resources: ['ceramic://*'],
+        expirationTime: expirationTime,
       });
       this.session = session;
       this.ceramic = new CeramicClient(this.ceramicUrl);
@@ -63,8 +76,8 @@ export class VessForNode extends BaseVESS {
       console.log(`ceramic authorized! env: ${this.env}`);
       return session;
     } catch (e) {
-      console.log(e);
-      throw new Error("Error authorizing DID session.");
+      console.error(e);
+      throw new Error('Error authorizing DID session.');
     }
   };
 
@@ -92,129 +105,188 @@ export class VessForNode extends BaseVESS {
     ) {
       return {
         status: 300,
-        result: "You need to call connect first",
+        result: 'You need to call connect first',
         streamId: undefined,
       };
     }
     try {
-      const doc = await this.createWorkCredential(credential);
-      const docUrl = doc.id.toUrl();
-      const crdl: WorkCredentialWithId = { ...credential, backupId: docUrl };
-      const setHeldWC = this.setHeldWorkCredentials([docUrl]);
-      const uploadBackup = this.backupDataStore.uploadCRDL(crdl);
-      await Promise.all([setHeldWC, uploadBackup]);
+      const val: WorkCredentialWithId = await createTileDoc<WorkCredential>(
+        credential,
+        this.ceramic,
+        this.dataModel,
+        'WorkCredential',
+        ['vess', 'workCredential']
+      );
+      if (!val.ceramicId) throw new Error('falild to create credentail');
+      const storeIDX = setIDX<HeldWorkCredentials, 'heldWorkCredentials'>(
+        [val.ceramicId],
+        this.ceramic,
+        this.dataStore,
+        'heldWorkCredentials',
+        'held'
+      );
+      const uploadBackup = this.backupDataStore.uploadCRDL(val);
+      await Promise.all([storeIDX, uploadBackup]);
       return {
         status: 200,
-        streamId: docUrl,
+        streamId: val.ceramicId,
       };
     } catch (error) {
       return {
         status: 300,
         error: error,
-        result: "Failed to Issue Work Credential",
+        result: 'Failed to Issue Work Credential',
         streamId: undefined,
       };
     }
   };
 
   issueMembershipSubject = async (
-    vc: VerifiableMembershipSubjectCredential
-  ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
-    if (
-      !this.ceramic ||
-      !this.ceramic?.did?.parent ||
-      !this.dataStore ||
-      !this.backupDataStore
-    ) {
+    org: OrganizationWIthId,
+    membership: MembershipWithId,
+    issuerAddress: string,
+    holderDids: string[],
+    signTypedData: SignTypedData<EIP712MessageTypes>
+  ): Promise<CustomResponse<{ docs: MembershipSubjectWithId[] }>> => {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
       return {
         status: 300,
-        result: "You need to call connect first",
-        streamId: undefined,
+        result: 'You need to call connect first',
+        docs: [],
       };
     }
 
     try {
-      const doc =
-        await createTileDocument<VerifiableMembershipSubjectCredential>(
-          this.ceramic,
-          this.ceramic?.did?.parent,
+      const issuePromises: Promise<VerifiableMembershipSubjectCredential>[] =
+        [];
+      for (const did of holderDids) {
+        const content: VerifiableMembershipSubject = {
+          id: did,
+          organizationName: org.name,
+          organizationId: org.ceramicId,
+          organizationIcon: org.icon || '',
+          membershipName: membership.name,
+          membershipIcon: membership.icon || '',
+          membershipId: membership.ceramicId,
+        };
+        const credentialId = `${content.organizationId}-${content.membershipId}-${content.id}`;
+        const issuePromise =
+          createVerifiableCredential<VerifiableMembershipSubjectCredential>(
+            issuerAddress,
+            credentialId,
+            VESS_CREDENTIALS.EVENT_ATTENDANCE,
+            content,
+            signTypedData
+          );
+        issuePromises.push(issuePromise);
+      }
+      const vcs = await Promise.all(issuePromises);
+      const docsPromises: Promise<MembershipSubjectWithId>[] = [];
+      for (const vc of vcs) {
+        const docPromise = createTileDoc<VerifiableMembershipSubjectCredential>(
           vc,
-          getSchema(this.dataModel, "VerifiableMembershipSubjectCredential"),
-          ["vess", "membershipCredential"]
+          this.ceramic,
+          this.dataModel,
+          'VerifiableMembershipSubjectCredential',
+          ['vess', 'membershipCredential']
         );
-      const docUrl = doc.id.toUrl();
-      const val: MembershipSubjectWithId = { ...vc, ceramicId: docUrl };
-      const setOrgs = this.setIssuedMembershipSubjects(docUrl);
-      const uploadBackup = this.backupDataStore.uploadMembershipSubject(val);
-      await Promise.all([setOrgs, uploadBackup]);
+        docsPromises.push(docPromise);
+      }
+      const docs = await Promise.all(docsPromises);
+      const docUrls = docs.map((doc) => doc.ceramicId);
+      await setIDX<
+        IssuedVerifiableMembershipSubjects,
+        'IssuedVerifiableMembershipSubjects'
+      >(
+        docUrls,
+        this.ceramic,
+        this.dataStore,
+        'IssuedVerifiableMembershipSubjects',
+        'issued'
+      );
       return {
         status: 200,
-        streamId: docUrl,
+        docs: docs,
       };
     } catch (error) {
       return {
         status: 300,
         error: error,
-        result: "Failed to Issue Work Credential",
-        streamId: undefined,
+        result: 'Failed to Issue Work Credential',
+        docs: [],
       };
     }
   };
 
   issueEventAttendanceCredentials = async (
-    vcs: EventAttendanceVerifiableCredential[]
-  ): Promise<CustomResponse<{ docs: EventAttendanceWithId[] }>> => {
-    if (
-      !this.ceramic ||
-      !this.ceramic?.did?.parent ||
-      !this.dataStore ||
-      !this.backupDataStore
-    ) {
+    content: EventWithId,
+    issuerAddress: string,
+    holderDids: string[],
+    signTypedData: SignTypedDataForNode
+  ): Promise<CustomResponse<{ docs: string[] }>> => {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
       return {
         status: 300,
-        result: "You need to call connect first",
+        result: 'You need to call connect first',
         docs: [],
       };
     }
     try {
+      const issuePromises: Promise<EventAttendanceVerifiableCredential>[] = [];
+      for (const did of holderDids) {
+        const eventAttendance: EventAttendance = {
+          id: did,
+          eventId: content.ceramicId,
+          eventName: content.name,
+          eventIcon: content.icon,
+        };
+        const credentialId = `${content.ceramicId}-${did}`;
+        const issuePromise =
+          createVerifiableCredentialForNode<EventAttendanceVerifiableCredential>(
+            issuerAddress,
+            credentialId,
+            VESS_CREDENTIALS.EVENT_ATTENDANCE,
+            eventAttendance,
+            signTypedData
+          );
+        issuePromises.push(issuePromise);
+      }
+      const vcs = await Promise.all(issuePromises);
       const docsPromises: Promise<EventAttendanceWithId>[] = [];
       for (const vc of vcs) {
-        const docPromise = this.storeEventAttendanceOnCeramic(vc);
+        const docPromise = createTileDoc<EventAttendanceVerifiableCredential>(
+          vc,
+          this.ceramic,
+          this.dataModel,
+          'EventAttendanceVerifiableCredential',
+          ['vess', 'eventAttendanceCredential']
+        );
         docsPromises.push(docPromise);
       }
       const docs = await Promise.all(docsPromises);
       const docUrls = docs.map((doc) => doc.ceramicId);
-      const setIssued =
-        this.setIssuedEventAttendanceVerifiableCredentials(docUrls);
-      await Promise.all([setIssued]);
+      await setIDX<
+        IssuedEventAttendanceVerifiableCredentials,
+        'IssuedEventAttendanceVerifiableCredentials'
+      >(
+        docUrls,
+        this.ceramic,
+        this.dataStore,
+        'IssuedEventAttendanceVerifiableCredentials',
+        'issued'
+      );
       return {
         status: 200,
-        docs,
+        docs: docUrls,
       };
     } catch (error) {
       return {
         status: 300,
         error: error,
-        result: "Failed to Issue Work Credential",
+        result: 'Failed to Issue Work Credential',
         docs: [],
       };
     }
-  };
-
-  storeEventAttendanceOnCeramic = async (
-    vc: EventAttendanceVerifiableCredential
-  ): Promise<EventAttendanceWithId> => {
-    if (!this.ceramic || !this.ceramic.did?.parent)
-      throw new Error("You need to call connect first");
-    const doc = await createTileDocument<EventAttendanceVerifiableCredential>(
-      this.ceramic,
-      this.ceramic?.did?.parent,
-      vc,
-      getSchema(this.dataModel, "EventAttendanceVerifiableCredential"),
-      ["vess", "eventAttendanceCredential"]
-    );
-    const id = doc.id.toUrl();
-    return { ...doc.content, ceramicId: id };
   };
 }
 
@@ -224,8 +296,8 @@ export const getVESSForNode = (dev: boolean = false): VessForNode => {
   if (vessForNode) {
     return vessForNode;
   }
-  console.log("vessForNode Initialized!", dev);
-  const env = !dev ? "mainnet" : "testnet-clay";
+  console.log('vessForNode Initialized!', dev);
+  const env = !dev ? 'mainnet' : 'testnet-clay';
   vessForNode = new VessForNode(env);
   return vessForNode;
 };

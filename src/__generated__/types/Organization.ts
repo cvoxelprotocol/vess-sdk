@@ -5,12 +5,32 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
+export type Links = {
+  linkType?: string;
+  value?: string;
+  [k: string]: unknown;
+}[];
+
 export interface Organization {
-  admin: string;
+  admin: {
+    id: string;
+    ethereumAddress?: string;
+    [k: string]: unknown;
+  };
   name: string;
   desc?: string;
   icon?: string;
+  coverImage?: string;
+  cardImage?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  optionColor?: string;
+  links?: Links;
+  tags?: string[];
   orbisSocialGroupId?: string;
+  establishedAt?: string;
+  location?: string;
   createdAt?: string;
+  updatedAt?: string;
   [k: string]: unknown;
 }

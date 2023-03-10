@@ -5,26 +5,7 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { Client, DeliverableItem } from './TaskCredential.js';
-import { Signatures, Transaction } from './VerifiableWorkCredential.js';
-
-export type CreatedAt = string;
-
-export interface WorkCredential {
-  id: string;
-  subject: WorkSubject;
-  signature?: Signatures;
-  createdAt?: CreatedAt;
-  updatedAt?: string;
-}
-export interface WorkSubject {
-  work?: Work;
-  tx?: Transaction;
-  deliverables?: DeliverableItem[];
-  client?: Client;
-  [k: string]: unknown;
-}
-export interface Work {
+export interface TaskCredential {
   id: string;
   /**
    * paid value
@@ -46,34 +27,54 @@ export interface Work {
    * work genre e.g, Dev, Design etc
    */
   genre?: string;
+  /**
+   * work tags
+   */
   tags?: string[];
   /**
    * currently support fulltime, parttime, and onetime
    */
-  jobType?: string;
+  workType?: string;
   /**
    * Time stamp of work started
    */
-  startTimestamp?: string;
+  startDate?: string;
   /**
    * Time stamp of work ended
    */
-  endTimestamp?: string;
+  endDate?: string;
+  /**
+   * work deliverables
+   */
+  deliverables?: DeliverableItem[];
+  client?: Client;
   /**
    * a transaction platform if exists e.g, gitcoin
    */
   platform?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  [k: string]: unknown;
+}
+export interface DeliverableItem {
   /**
-   * hash value of all work descriptions(summary, detail, deliverables)
+   * current formats are url, tx, cid
    */
-  deliverableHash?: string;
+  format?: string;
   /**
-   * CRDL issue date
+   * work deliverable value(url/cid)
    */
-  issuedAt: string;
+  value?: string;
+  [k: string]: unknown;
+}
+export interface Client {
   /**
-   * organization Id if exist
+   * name or DID
    */
-  organization?: string;
+  format?: string;
+  /**
+   * Client Info
+   */
+  value?: string;
   [k: string]: unknown;
 }

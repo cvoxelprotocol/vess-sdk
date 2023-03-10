@@ -1,58 +1,78 @@
 import {
+  Alias,
+  BaseIDXType,
   BaseResponse,
   CustomResponse,
   EventAttendanceWithId,
   EventWithId,
   MembershipSubjectWithId,
+  MembershipSubjectWithOrg,
   MembershipWithId,
   ModelTypes,
+  OldOrganizationWIthId,
   OrganizationWIthId,
   VerifiableWorkCredentialWithId,
+  WithCeramicId,
   WorkCredentialWithId,
-} from "./interface/index.js";
+} from './interface/index.js';
 import {
-  createTileDocument,
+  createTileDoc,
+  deleteFromIDX,
   getDataModel,
-  getSchema,
-} from "./utils/ceramicHelper.js";
-import {
-  convertDateToTimestampStr,
-  removeUndefinedFromArray,
-} from "./utils/common.js";
-import { _getEIP712WorkCredentialSubjectSignature } from "./utils/providerHelper.js";
+  getIDXDocs,
+  getTileDoc,
+  getUniqueIDX,
+  setIDX,
+  setIDXWithBreaking,
+  setUniqueIDX,
+  updateTileDoc,
+} from './utils/ceramicHelper.js';
+import { convertDateToTimestampStr } from './utils/common.js';
 
-import { TileDocument } from "@ceramicnetwork/stream-tile";
-import { CeramicClient } from "@ceramicnetwork/http-client";
-import { DIDDataStore } from "@glazed/did-datastore";
-import { WorkCredential } from "./__generated__/types/WorkCredential";
-import { ModelTypesToAliases } from "@glazed/types";
-import { HeldWorkCredentials } from "./__generated__/types/HeldWorkCredentials";
-import { CreatedOrganizations } from "./__generated__/types/CreatedOrganizations";
-import { CreatedMemberships } from "./__generated__/types/CreatedMemberships";
-import { IssuedVerifiableMembershipSubjects } from "./__generated__/types/IssuedVerifiableMembershipSubjects";
-import { HeldVerifiableMembershipSubjects } from "./__generated__/types/HeldVerifiableMembershipSubjects";
-import { IssuedEvents } from "./__generated__/types/IssuedEvents";
-import { IssuedEventAttendanceVerifiableCredentials } from "./__generated__/types/IssuedEventAttendanceVerifiableCredentials.js";
-import { HeldEventAttendanceVerifiableCredentials } from "./__generated__/types/HeldEventAttendanceVerifiableCredentials";
-import { Organization } from "./__generated__/types/Organization";
-import { Membership } from "./__generated__/types/MemberShip";
+import { TileDocument } from '@ceramicnetwork/stream-tile';
+import { CeramicClient } from '@ceramicnetwork/http-client';
+import { DIDDataStore } from '@glazed/did-datastore';
+import { ModelTypesToAliases } from '@glazed/types';
+import {
+  Membership,
+  CreatedMemberships,
+  CreatedOrganizations,
+  HeldWorkCredentials,
+  WorkCredential,
+  Organization,
+  OldOrganization,
+  HeldEventAttendanceVerifiableCredentials,
+  IssuedEventAttendanceVerifiableCredentials,
+  IssuedEvents,
+  HeldVerifiableMembershipSubjects,
+  IssuedVerifiableMembershipSubjects,
+  BusinessProfile,
+  CreatedOldOrganizations,
+  SocialLinks,
+  HighlightedCredentials,
+  HeldSelfClaimedMembershipSubjects,
+  SelfClaimedMembershipSubject,
+  HeldVerifiableWorkCredentials,
+  VerifiableWorkCredential,
+  Event,
+  TaskCredential,
+  HeldTaskCredentials,
+} from './__generated__/index.js';
 import {
   EventAttendanceVerifiableCredential,
   VerifiableMembershipSubjectCredential,
-} from "./interface/eip712.js";
-import { BackupDataStore } from "./utils/backupDataStoreHelper.js";
-import { DIDSession } from "did-session";
-import { VerifiableWorkCredential } from "./__generated__/types/VerifiableWorkCredential";
-import { HeldVerifiableWorkCredentials } from "./__generated__/types/HeldVerifiableWorkCredentials";
-import { Event } from "./__generated__/types/Event";
+} from './interface/eip712.js';
+import { BackupDataStore } from './utils/backupDataStoreHelper.js';
+import { DIDSession } from 'did-session';
 
-export const PROD_CERAMIC_URL = "https://prod.cvoxelceramic.com/";
-export const TESTNET_CERAMIC_URL = "https://ceramic-clay.3boxlabs.com";
+export const PROD_CERAMIC_URL = 'https://prod.cvoxelceramic.com/';
+export const TESTNET_CERAMIC_URL = 'https://ceramic-clay.3boxlabs.com';
+export const TESTNET_LOCAL_URL = 'http://localhost:7007/';
 
 export type AuthResponse = {
   session: DIDSession;
   ceramic: CeramicClient;
-  env: "mainnet" | "testnet-clay";
+  env: 'mainnet' | 'testnet-clay';
 };
 
 export class BaseVESS {
@@ -60,19 +80,19 @@ export class BaseVESS {
   dataModel = getDataModel() as ModelTypesToAliases<ModelTypes>;
   dataStore = undefined as DIDDataStore<ModelTypes> | undefined;
   session = undefined as DIDSession | undefined;
-  env = "mainnet" as "mainnet" | "testnet-clay";
+  env = 'mainnet' as 'mainnet' | 'testnet-clay';
   ceramicUrl = PROD_CERAMIC_URL as string;
   backupDataStore = undefined as BackupDataStore | undefined;
 
   constructor(
-    env: "mainnet" | "testnet-clay" = "mainnet",
+    env: 'mainnet' | 'testnet-clay' = 'mainnet',
     ceramic?: CeramicClient
   ) {
     this.ceramic = ceramic;
     this.dataModel = getDataModel(env);
     this.env = env;
     this.ceramicUrl =
-      this.env === "mainnet" ? PROD_CERAMIC_URL : TESTNET_CERAMIC_URL;
+      this.env === 'mainnet' ? PROD_CERAMIC_URL : TESTNET_CERAMIC_URL;
     if (ceramic) {
       if (this.ceramic?.did?.parent) {
         this.dataStore = new DIDDataStore({
@@ -87,7 +107,27 @@ export class BaseVESS {
     this.backupDataStore = new BackupDataStore(this.env);
   }
 
+  isAuthenticated = (): boolean => {
+    return (
+      !!this.session &&
+      !!this.ceramic?.did?.parent &&
+      this.session.hasSession &&
+      !this.session.isExpired
+    );
+  };
+
   // ============================== Read ==============================
+
+  private getIDX = async <T extends BaseIDXType, K extends Alias, U>(
+    modelName: K,
+    did?: string
+  ): Promise<WithCeramicId<U>[]> => {
+    if (!did) return [];
+    const ceramic = this.ceramic || new CeramicClient(this.ceramicUrl);
+    const dataStore =
+      this.dataStore || new DIDDataStore({ ceramic, model: this.dataModel });
+    return await getIDXDocs<T, K, U>(ceramic, dataStore, modelName, did);
+  };
 
   /**
    * Get {streamId}'s tile doc
@@ -98,13 +138,25 @@ export class BaseVESS {
     streamId?: string
   ): Promise<WorkCredentialWithId | null> => {
     if (!streamId) return null;
-    const ceramic = this.ceramic || new CeramicClient(this.ceramicUrl);
-    const doc = await TileDocument.load<WorkCredential>(ceramic, streamId);
-    const crdl: WorkCredentialWithId = {
-      ...doc.content,
-      backupId: doc.id.toString(),
-    };
-    return crdl;
+    return await getTileDoc<WorkCredentialWithId>(
+      streamId,
+      this.ceramic || new CeramicClient(this.ceramicUrl)
+    );
+  };
+
+  /**
+   * Get {streamId}'s tile doc
+   * @param streamId
+   * @returns WorkCredentialWithId | null
+   */
+  getTaskCredential = async (
+    streamId?: string
+  ): Promise<WithCeramicId<TaskCredential> | null> => {
+    if (!streamId) return null;
+    return await getTileDoc<TaskCredential>(
+      streamId,
+      this.ceramic || new CeramicClient(this.ceramicUrl)
+    );
   };
 
   /**
@@ -116,16 +168,10 @@ export class BaseVESS {
     streamId?: string
   ): Promise<VerifiableWorkCredentialWithId | null> => {
     if (!streamId) return null;
-    const ceramic = this.ceramic || new CeramicClient(this.ceramicUrl);
-    const doc = await TileDocument.load<VerifiableWorkCredential>(
-      ceramic,
-      streamId
+    return await getTileDoc<VerifiableWorkCredential>(
+      streamId,
+      this.ceramic || new CeramicClient(this.ceramicUrl)
     );
-    const crdl: VerifiableWorkCredentialWithId = {
-      ...doc.content,
-      ceramicId: doc.id.toString(),
-    };
-    return crdl;
   };
 
   /**
@@ -136,28 +182,11 @@ export class BaseVESS {
   getHeldWorkCredentials = async (
     did?: string
   ): Promise<WorkCredentialWithId[]> => {
-    if (!did || !this.dataModel) return [];
-    const ceramic = this.ceramic || new CeramicClient(this.ceramicUrl);
-    const dataStore =
-      this.dataStore || new DIDDataStore({ ceramic, model: this.dataModel });
-    const HeldWorkCredentials = await dataStore.get<
-      "heldWorkCredentials",
-      HeldWorkCredentials
-    >("heldWorkCredentials", did);
-    if (!HeldWorkCredentials?.held) return [];
-    const promiseArr = [];
-    for (const id of HeldWorkCredentials.held) {
-      const loadPromise = TileDocument.load<WorkCredential>(ceramic, id);
-      promiseArr.push(loadPromise);
-    }
-    const res = await Promise.all(promiseArr);
-    return res.map((r) => {
-      const crdl: WorkCredentialWithId = {
-        ...r.content,
-        backupId: r.id.toString(),
-      };
-      return crdl;
-    });
+    return await this.getIDX<
+      HeldWorkCredentials,
+      'heldWorkCredentials',
+      WorkCredential
+    >('heldWorkCredentials', did);
   };
 
   /**
@@ -168,31 +197,81 @@ export class BaseVESS {
   getHeldVerifiableWorkCredentials = async (
     did?: string
   ): Promise<VerifiableWorkCredentialWithId[]> => {
-    if (!did || !this.dataModel) return [];
+    return await this.getIDX<
+      HeldVerifiableWorkCredentials,
+      'heldVerifiableWorkCredentials',
+      VerifiableWorkCredential
+    >('heldVerifiableWorkCredentials', did);
+  };
+
+  /**
+   *
+   * @param did
+   * @returns MembershipSubjectWithId[]
+   */
+  getHeldTaskCredentials = async (
+    did?: string
+  ): Promise<WithCeramicId<TaskCredential>[]> => {
+    if (!did) return [];
+    return await this.getIDX<
+      HeldTaskCredentials,
+      'HeldTaskCredentials',
+      TaskCredential
+    >('HeldTaskCredentials', did);
+  };
+
+  /**
+   * Get {did}'s business profile
+   * @param did
+   * @returns BusinessProfile
+   */
+  getBusinessProfile = async (
+    did?: string
+  ): Promise<BusinessProfile | null> => {
+    if (!did) return null;
     const ceramic = this.ceramic || new CeramicClient(this.ceramicUrl);
     const dataStore =
       this.dataStore || new DIDDataStore({ ceramic, model: this.dataModel });
-    const HeldVerifiableWorkCredentials = await dataStore.get<
-      "heldVerifiableWorkCredentials",
-      HeldVerifiableWorkCredentials
-    >("heldVerifiableWorkCredentials", did);
-    if (!HeldVerifiableWorkCredentials?.held) return [];
-    const promiseArr = [];
-    for (const id of HeldVerifiableWorkCredentials.held) {
-      const loadPromise = TileDocument.load<VerifiableWorkCredential>(
-        ceramic,
-        id
-      );
-      promiseArr.push(loadPromise);
-    }
-    const res = await Promise.all(promiseArr);
-    return res.map((r) => {
-      const crdl: VerifiableWorkCredentialWithId = {
-        ...r.content,
-        ceramicId: r.id.toString(),
-      };
-      return crdl;
-    });
+    return await getUniqueIDX<BusinessProfile, 'BusinessProfile'>(
+      dataStore,
+      'BusinessProfile',
+      did
+    );
+  };
+
+  /**
+   * Get {did}'s business profile
+   * @param did
+   * @returns BusinessProfile
+   */
+  getSocialLinks = async (did?: string): Promise<SocialLinks | null> => {
+    if (!did) return null;
+    const ceramic = this.ceramic || new CeramicClient(this.ceramicUrl);
+    const dataStore =
+      this.dataStore || new DIDDataStore({ ceramic, model: this.dataModel });
+    return await getUniqueIDX<SocialLinks, 'SocialLinks'>(
+      dataStore,
+      'SocialLinks',
+      did
+    );
+  };
+  /**
+   * Get {did}'s business profile
+   * @param did
+   * @returns BusinessProfile
+   */
+  getHighlightedCredentials = async (
+    did?: string
+  ): Promise<HighlightedCredentials | null> => {
+    if (!did) return null;
+    const ceramic = this.ceramic || new CeramicClient(this.ceramicUrl);
+    const dataStore =
+      this.dataStore || new DIDDataStore({ ceramic, model: this.dataModel });
+    return await getUniqueIDX<HighlightedCredentials, 'HighlightedCredentials'>(
+      dataStore,
+      'HighlightedCredentials',
+      did
+    );
   };
 
   /**
@@ -204,13 +283,25 @@ export class BaseVESS {
     streamId?: string
   ): Promise<OrganizationWIthId | undefined> => {
     if (!streamId) return undefined;
-    const ceramic = this.ceramic || new CeramicClient(this.ceramicUrl);
-    const doc = await TileDocument.load<Organization>(ceramic, streamId);
-    const crdl: OrganizationWIthId = {
-      ...doc.content,
-      ceramicId: doc.id.toString(),
-    };
-    return crdl;
+    return await getTileDoc<Organization>(
+      streamId,
+      this.ceramic || new CeramicClient(this.ceramicUrl)
+    );
+  };
+
+  /**
+   * Get {streamId}'s orgs
+   * @param streamId
+   * @returns OrganizationWIthId | undefined
+   */
+  getOldOrganization = async (
+    streamId?: string
+  ): Promise<OldOrganizationWIthId | undefined> => {
+    if (!streamId) return undefined;
+    return await getTileDoc<OldOrganization>(
+      streamId,
+      this.ceramic || new CeramicClient(this.ceramicUrl)
+    );
   };
 
   /**
@@ -221,23 +312,26 @@ export class BaseVESS {
   getCreatedOrganization = async (
     did?: string
   ): Promise<OrganizationWIthId[]> => {
-    const ceramic = this.ceramic || new CeramicClient(this.ceramicUrl);
-    const dataStore =
-      this.dataStore || new DIDDataStore({ ceramic, model: this.dataModel });
-    const pkhDid = did || this.ceramic?.did?.parent;
-    const CreatedOrganizations = await dataStore.get<
-      "CreatedOrganizations",
-      CreatedOrganizations
-    >("CreatedOrganizations", pkhDid);
-    const createdOrgs = CreatedOrganizations?.created ?? [];
-    if (createdOrgs.length === 0) return [];
-    const arr: Promise<OrganizationWIthId | undefined>[] = [];
-    for (const orgId of createdOrgs) {
-      const o = this.getOrganization(orgId);
-      arr.push(o);
-    }
-    const res = await Promise.all(arr);
-    return removeUndefinedFromArray<OrganizationWIthId>(res);
+    return await this.getIDX<
+      CreatedOrganizations,
+      'CreatedOrganizations',
+      Organization
+    >('CreatedOrganizations', did);
+  };
+
+  /**
+   * Get {did}'s created orgs
+   * @param did
+   * @returns OrganizationWIthId[]
+   */
+  getCreatedOldOrganization = async (
+    did?: string
+  ): Promise<OldOrganizationWIthId[]> => {
+    return await this.getIDX<
+      CreatedOldOrganizations,
+      'CreatedOldOrganizations',
+      OldOrganization
+    >('CreatedOldOrganizations', did);
   };
 
   /**
@@ -249,13 +343,23 @@ export class BaseVESS {
     streamId?: string
   ): Promise<MembershipWithId | undefined> => {
     if (!streamId) return undefined;
-    const ceramic = this.ceramic || new CeramicClient(this.ceramicUrl);
-    const doc = await TileDocument.load<Membership>(ceramic, streamId);
-    const crdl: MembershipWithId = {
-      ...doc.content,
-      ceramicId: doc.id.toString(),
-    };
-    return crdl;
+    return await getTileDoc<Membership>(
+      streamId,
+      this.ceramic || new CeramicClient(this.ceramicUrl)
+    );
+  };
+
+  /**
+   * Get {did}'s created memberships
+   * @param did
+   * @returns MembershipWithId[]
+   */
+  getCreatedMemberships = async (did?: string): Promise<MembershipWithId[]> => {
+    return await this.getIDX<
+      CreatedMemberships,
+      'CreatedMemberships',
+      Membership
+    >('CreatedMemberships', did);
   };
 
   /**
@@ -267,46 +371,10 @@ export class BaseVESS {
     streamId?: string
   ): Promise<MembershipSubjectWithId | undefined> => {
     if (!streamId) return undefined;
-    const ceramic = this.ceramic || new CeramicClient(this.ceramicUrl);
-    const doc = await TileDocument.load<VerifiableMembershipSubjectCredential>(
-      ceramic,
-      streamId
+    return await getTileDoc<VerifiableMembershipSubjectCredential>(
+      streamId,
+      this.ceramic || new CeramicClient(this.ceramicUrl)
     );
-    const crdl: MembershipSubjectWithId = {
-      ...doc.content,
-      ceramicId: doc.id.toString(),
-    };
-    return crdl;
-  };
-
-  /**
-   * Get {did}'s created memberships
-   * @param did
-   * @returns MembershipWithId[]
-   */
-  getCreatedMemberships = async (did?: string): Promise<MembershipWithId[]> => {
-    const ceramic = this.ceramic || new CeramicClient(this.ceramicUrl);
-    const pkhDid = did || this.ceramic?.did?.parent;
-    const dataStore =
-      this.dataStore ||
-      new DIDDataStore({
-        ceramic: ceramic,
-        model: this.dataModel,
-        id: pkhDid,
-      });
-    const CreatedMemberships = await dataStore.get<
-      "CreatedMemberships",
-      CreatedMemberships
-    >("CreatedMemberships", pkhDid);
-    const created = CreatedMemberships?.created ?? [];
-    if (created.length === 0) return [];
-    const arr: Promise<MembershipWithId | undefined>[] = [];
-    for (const id of created) {
-      const o = this.getMembership(id);
-      arr.push(o);
-    }
-    const res = await Promise.all(arr);
-    return removeUndefinedFromArray<MembershipWithId>(res);
   };
 
   /**
@@ -317,28 +385,11 @@ export class BaseVESS {
   getIssuedMembershipSubjects = async (
     did?: string
   ): Promise<MembershipSubjectWithId[]> => {
-    const ceramic = this.ceramic || new CeramicClient(this.ceramicUrl);
-    const pkhDid = did || this.ceramic?.did?.parent;
-    const dataStore =
-      this.dataStore ||
-      new DIDDataStore({
-        ceramic: ceramic,
-        model: this.dataModel,
-        id: pkhDid,
-      });
-    const IssuedVerifiableMembershipSubjects = await dataStore.get<
-      "IssuedVerifiableMembershipSubjects",
-      IssuedVerifiableMembershipSubjects
-    >("IssuedVerifiableMembershipSubjects", pkhDid);
-    const issued = IssuedVerifiableMembershipSubjects?.issued ?? [];
-    if (issued.length === 0) return [];
-    const arr: Promise<MembershipSubjectWithId | undefined>[] = [];
-    for (const id of issued) {
-      const o = this.getVerifiableMembershipSubjectCredential(id);
-      arr.push(o);
-    }
-    const res = await Promise.all(arr);
-    return removeUndefinedFromArray<MembershipSubjectWithId>(res);
+    return await this.getIDX<
+      IssuedVerifiableMembershipSubjects,
+      'IssuedVerifiableMembershipSubjects',
+      VerifiableMembershipSubjectCredential
+    >('IssuedVerifiableMembershipSubjects', did);
   };
 
   /**
@@ -348,29 +399,57 @@ export class BaseVESS {
    */
   getHeldMembershipSubjects = async (
     did?: string
-  ): Promise<MembershipSubjectWithId[]> => {
-    const ceramic = this.ceramic || new CeramicClient(this.ceramicUrl);
-    const pkhDid = did || this.ceramic?.did?.parent;
-    const dataStore =
-      this.dataStore ||
-      new DIDDataStore({
-        ceramic: ceramic,
-        model: this.dataModel,
-        id: pkhDid,
-      });
-    const HeldMembershipSubjects = await dataStore.get<
-      "HeldVerifiableMembershipSubjects",
-      HeldVerifiableMembershipSubjects
-    >("HeldVerifiableMembershipSubjects", pkhDid);
-    const created = HeldMembershipSubjects?.held ?? [];
-    if (created.length === 0) return [];
-    const arr: Promise<MembershipSubjectWithId | undefined>[] = [];
-    for (const id of created) {
-      const o = this.getVerifiableMembershipSubjectCredential(id);
-      arr.push(o);
+  ): Promise<MembershipSubjectWithOrg[]> => {
+    const res = await this.getIDX<
+      HeldVerifiableMembershipSubjects,
+      'HeldVerifiableMembershipSubjects',
+      VerifiableMembershipSubjectCredential
+    >('HeldVerifiableMembershipSubjects', did);
+    let membershipSubjectWithOrgsPromises: Promise<MembershipSubjectWithOrg>[] =
+      [];
+    for (const m of res) {
+      const promise = this.getMembershipSubjectWithOrg(m);
+      membershipSubjectWithOrgsPromises.push(promise);
     }
-    const res = await Promise.all(arr);
-    return removeUndefinedFromArray<MembershipSubjectWithId>(res);
+    return await Promise.all(membershipSubjectWithOrgsPromises);
+  };
+
+  getMembershipSubjectWithOrg = async (
+    m: MembershipSubjectWithId
+  ): Promise<MembershipSubjectWithOrg> => {
+    const org = await this.getOrganization(m.credentialSubject.organizationId);
+    return { ...m, workspace: org };
+  };
+
+  /**
+   *
+   * @param did
+   * @returns MembershipSubjectWithId[]
+   */
+  getHeldMembershipSubjectsFromBackup = async (
+    did?: string
+  ): Promise<MembershipSubjectWithId[]> => {
+    if (!this.backupDataStore) {
+      console.log('you have to initialize backupDataStore');
+      return [];
+    }
+    return await this.backupDataStore.getHeldMembershipSubjectsFromDB(did);
+  };
+
+  /**
+   *
+   * @param did
+   * @returns MembershipSubjectWithId[]
+   */
+  getHeldSelfClaimedMembershipSubjects = async (
+    did?: string
+  ): Promise<WithCeramicId<SelfClaimedMembershipSubject>[]> => {
+    if (!did) return [];
+    return await this.getIDX<
+      HeldSelfClaimedMembershipSubjects,
+      'HeldSelfClaimedMembershipSubjects',
+      SelfClaimedMembershipSubject
+    >('HeldSelfClaimedMembershipSubjects', did);
   };
 
   /**
@@ -380,13 +459,10 @@ export class BaseVESS {
    */
   getEvent = async (streamId?: string): Promise<EventWithId | undefined> => {
     if (!streamId) return undefined;
-    const ceramic = this.ceramic || new CeramicClient(this.ceramicUrl);
-    const doc = await TileDocument.load<Event>(ceramic, streamId);
-    const crdl: EventWithId = {
-      ...doc.content,
-      ceramicId: doc.id.toString(),
-    };
-    return crdl;
+    return await getTileDoc<Event>(
+      streamId,
+      this.ceramic || new CeramicClient(this.ceramicUrl)
+    );
   };
 
   /**
@@ -395,28 +471,11 @@ export class BaseVESS {
    * @returns EventWithId[]
    */
   getIssuedEvents = async (did?: string): Promise<EventWithId[]> => {
-    const ceramic = this.ceramic || new CeramicClient(this.ceramicUrl);
-    const pkhDid = did || this.ceramic?.did?.parent;
-    const dataStore =
-      this.dataStore ||
-      new DIDDataStore({
-        ceramic: ceramic,
-        model: this.dataModel,
-        id: pkhDid,
-      });
-    const IssuedEvents = await dataStore.get<"IssuedEvents", IssuedEvents>(
-      "IssuedEvents",
-      pkhDid
+    if (!did) return [];
+    return await this.getIDX<IssuedEvents, 'IssuedEvents', Event>(
+      'IssuedEvents',
+      did
     );
-    const issued = IssuedEvents?.issued ?? [];
-    if (issued.length === 0) return [];
-    const arr: Promise<EventWithId | undefined>[] = [];
-    for (const id of issued) {
-      const o = this.getEvent(id);
-      arr.push(o);
-    }
-    const res = await Promise.all(arr);
-    return removeUndefinedFromArray<EventWithId>(res);
   };
 
   /**
@@ -428,16 +487,10 @@ export class BaseVESS {
     streamId?: string
   ): Promise<EventAttendanceWithId | undefined> => {
     if (!streamId) return undefined;
-    const ceramic = this.ceramic || new CeramicClient(this.ceramicUrl);
-    const doc = await TileDocument.load<EventAttendanceVerifiableCredential>(
-      ceramic,
-      streamId
+    return await getTileDoc<EventAttendanceVerifiableCredential>(
+      streamId,
+      this.ceramic || new CeramicClient(this.ceramicUrl)
     );
-    const crdl: EventAttendanceWithId = {
-      ...doc.content,
-      ceramicId: doc.id.toString(),
-    };
-    return crdl;
   };
 
   /**
@@ -448,28 +501,11 @@ export class BaseVESS {
   getIssuedEventAttendanceVerifiableCredentials = async (
     did?: string
   ): Promise<EventAttendanceWithId[]> => {
-    const ceramic = this.ceramic || new CeramicClient(this.ceramicUrl);
-    const pkhDid = did || this.ceramic?.did?.parent;
-    const dataStore =
-      this.dataStore ||
-      new DIDDataStore({
-        ceramic: ceramic,
-        model: this.dataModel,
-        id: pkhDid,
-      });
-    const IssuedEventAttendanceVerifiableCredentials = await dataStore.get<
-      "IssuedEventAttendanceVerifiableCredentials",
-      IssuedEventAttendanceVerifiableCredentials
-    >("IssuedEventAttendanceVerifiableCredentials", pkhDid);
-    const issued = IssuedEventAttendanceVerifiableCredentials?.issued ?? [];
-    if (issued.length === 0) return [];
-    const arr: Promise<EventAttendanceWithId | undefined>[] = [];
-    for (const id of issued) {
-      const o = this.getEventAttendance(id);
-      arr.push(o);
-    }
-    const res = await Promise.all(arr);
-    return removeUndefinedFromArray<EventAttendanceWithId>(res);
+    return await this.getIDX<
+      IssuedEventAttendanceVerifiableCredentials,
+      'IssuedEventAttendanceVerifiableCredentials',
+      EventAttendanceVerifiableCredential
+    >('IssuedEventAttendanceVerifiableCredentials', did);
   };
 
   /**
@@ -480,71 +516,29 @@ export class BaseVESS {
   getHeldEventAttendanceVerifiableCredentials = async (
     did?: string
   ): Promise<EventAttendanceWithId[]> => {
-    const ceramic = this.ceramic || new CeramicClient(this.ceramicUrl);
-    const pkhDid = did || this.ceramic?.did?.parent;
-    const dataStore =
-      this.dataStore ||
-      new DIDDataStore({
-        ceramic: ceramic,
-        model: this.dataModel,
-        id: pkhDid,
-      });
-    const HeldEventAttendanceVerifiableCredentials = await dataStore.get<
-      "HeldEventAttendanceVerifiableCredentials",
-      HeldEventAttendanceVerifiableCredentials
-    >("HeldEventAttendanceVerifiableCredentials", pkhDid);
-    const created = HeldEventAttendanceVerifiableCredentials?.held ?? [];
-    if (created.length === 0) return [];
-    const arr: Promise<EventAttendanceWithId | undefined>[] = [];
-    for (const id of created) {
-      const o = this.getEventAttendance(id);
-      arr.push(o);
+    return await this.getIDX<
+      HeldEventAttendanceVerifiableCredentials,
+      'HeldEventAttendanceVerifiableCredentials',
+      EventAttendanceVerifiableCredential
+    >('HeldEventAttendanceVerifiableCredentials', did);
+  };
+
+  /**
+   *
+   * @param did
+   * @returns EventAttendanceWithId[]
+   */
+  getHeldEventAttendanceVerifiableCredentialsFromBackup = async (
+    did?: string
+  ): Promise<EventAttendanceWithId[]> => {
+    if (!this.backupDataStore) {
+      console.log('you have to initialize backupDataStore');
+      return [];
     }
-    const res = await Promise.all(arr);
-    return removeUndefinedFromArray<EventAttendanceWithId>(res);
+    return await this.backupDataStore.getHeldEventAttendanceFromDB(did);
   };
 
   // ============================== Issue ==============================
-  /**
-   * create work credential to Ceramic
-   * @param content
-   * @returns streamid
-   */
-  createWorkCredential = async (
-    content: WorkCredential
-  ): Promise<TileDocument<WorkCredential>> => {
-    if (
-      !this.ceramic ||
-      !this.ceramic?.did?.parent ||
-      !this.dataModel ||
-      !this.backupDataStore
-    ) {
-      throw new Error("you need to connect ceramic");
-    }
-    try {
-      return await createTileDocument<WorkCredential>(
-        this.ceramic,
-        this.ceramic?.did?.parent,
-        content,
-        getSchema(this.dataModel, "WorkCredential")
-      );
-    } catch (error) {
-      throw new Error(JSON.stringify(error));
-    }
-  };
-
-  setHeldWorkCredentials = async (contentIds: string[]): Promise<void> => {
-    if (!this.dataStore || !this.ceramic?.did?.parent) return undefined;
-    const heldWorkCredentials = await this.dataStore.get<
-      "heldWorkCredentials",
-      HeldWorkCredentials
-    >("heldWorkCredentials", this.ceramic?.did?.parent);
-    const workCRDLs = heldWorkCredentials?.held ?? [];
-    const updatedCredentails = [...workCRDLs, ...contentIds];
-    await this.dataStore.set("heldWorkCredentials", {
-      held: updatedCredentails,
-    });
-  };
 
   /**
    * issue verifiable work credential to Ceramic
@@ -562,53 +556,44 @@ export class BaseVESS {
     ) {
       return {
         status: 300,
-        result: "You need to call connect first",
+        result: 'You need to call connect first',
         streamId: undefined,
       };
     }
     try {
-      const doc = await createTileDocument<VerifiableWorkCredential>(
+      const val: VerifiableWorkCredentialWithId =
+        await createTileDoc<VerifiableWorkCredential>(
+          content,
+          this.ceramic,
+          this.dataModel,
+          'VerifiableWorkCredential',
+          ['vess', 'VerifiableWorkCredential']
+        );
+      const storeIDX = setIDX<
+        HeldVerifiableWorkCredentials,
+        'heldVerifiableWorkCredentials'
+      >(
+        [val.ceramicId],
         this.ceramic,
-        this.ceramic?.did?.parent,
-        content,
-        getSchema(this.dataModel, "VerifiableWorkCredential")
+        this.dataStore,
+        'heldVerifiableWorkCredentials',
+        'held'
       );
-      const docUrl = doc.id.toUrl();
-      const crdl: VerifiableWorkCredentialWithId = {
-        ...content,
-        ceramicId: docUrl,
-      };
-      const setHeldWC = this.setHeldVerifiableWorkCredentials([docUrl]);
       const uploadBackup =
-        this.backupDataStore.uploadVerifiableWorkCredential(crdl);
-      await Promise.all([setHeldWC, uploadBackup]);
+        this.backupDataStore.uploadVerifiableWorkCredential(val);
+      await Promise.all([storeIDX, uploadBackup]);
       return {
         status: 200,
-        streamId: docUrl,
+        streamId: val.ceramicId,
       };
     } catch (error) {
       return {
         status: 300,
         error: error,
-        result: "Failed to Issue Work Credential",
+        result: 'Failed to Issue Work Credential',
         streamId: undefined,
       };
     }
-  };
-
-  setHeldVerifiableWorkCredentials = async (
-    contentIds: string[]
-  ): Promise<void> => {
-    if (!this.dataStore || !this.ceramic?.did?.parent) return undefined;
-    const heldWorkCredentials = await this.dataStore.get<
-      "heldVerifiableWorkCredentials",
-      HeldVerifiableWorkCredentials
-    >("heldVerifiableWorkCredentials", this.ceramic?.did?.parent);
-    const workCRDLs = heldWorkCredentials?.held ?? [];
-    const updatedCredentails = [...workCRDLs, ...contentIds];
-    await this.dataStore.set("heldWorkCredentials", {
-      held: updatedCredentails,
-    });
   };
 
   /**
@@ -617,7 +602,8 @@ export class BaseVESS {
    * @returns streamid
    */
   createOrganization = async (
-    content: Organization
+    content: Organization,
+    saveBackup: boolean = true
   ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
     if (
       !this.ceramic ||
@@ -627,48 +613,42 @@ export class BaseVESS {
     ) {
       return {
         status: 300,
-        result: "You need to call connect first",
+        result: 'You need to call connect first',
         streamId: undefined,
       };
     }
     try {
-      const doc = await createTileDocument<Organization>(
-        this.ceramic,
-        this.ceramic?.did?.parent,
+      const val: OrganizationWIthId = await createTileDoc<Organization>(
         content,
-        getSchema(this.dataModel, "Organization"),
-        ["vess", "organization"]
+        this.ceramic,
+        this.dataModel,
+        'Organization',
+        ['vess', 'organization']
       );
-      const docUrl = doc.id.toUrl();
-      const val: OrganizationWIthId = { ...content, ceramicId: docUrl };
-      const setOrgs = this.setCreatedOrganizations(docUrl);
-      const uploadBackup = this.backupDataStore.uploadOrg(val);
-      await Promise.all([setOrgs, uploadBackup]);
+      const storeIDX = setIDX<CreatedOrganizations, 'CreatedOrganizations'>(
+        [val.ceramicId],
+        this.ceramic,
+        this.dataStore,
+        'CreatedOrganizations',
+        'created'
+      );
+      if (saveBackup) {
+        const uploadBackup = this.backupDataStore.uploadOrg(val);
+        await Promise.all([storeIDX, uploadBackup]);
+      }
+      await Promise.all([storeIDX]);
       return {
         status: 200,
-        streamId: docUrl,
+        streamId: val.ceramicId,
       };
     } catch (error) {
       return {
         status: 300,
         error: error,
-        result: "Failed to Issue Work Credential",
+        result: 'Failed to Create Work space',
         streamId: undefined,
       };
     }
-  };
-
-  setCreatedOrganizations = async (contentId: string): Promise<void> => {
-    if (!this.dataStore || !this.ceramic?.did?.parent) return undefined;
-    const CreatedOrganizations = await this.dataStore.get<
-      "CreatedOrganizations",
-      CreatedOrganizations
-    >("CreatedOrganizations", this.ceramic?.did?.parent);
-    const orgs = CreatedOrganizations?.created ?? [];
-    const updatedOrgs = [...orgs, contentId];
-    await this.dataStore.set("CreatedOrganizations", {
-      created: updatedOrgs,
-    });
   };
 
   createMembership = async (
@@ -682,47 +662,39 @@ export class BaseVESS {
     ) {
       return {
         status: 300,
-        result: "You need to call connect first",
+        result: 'You need to call connect first',
         streamId: undefined,
       };
     }
     try {
-      const doc = await createTileDocument<Membership>(
-        this.ceramic,
-        this.ceramic?.did?.parent,
+      const val: MembershipWithId = await createTileDoc<Membership>(
         content,
-        getSchema(this.dataModel, "MemberShip"),
-        ["vess", "membership"]
+        this.ceramic,
+        this.dataModel,
+        'MemberShip',
+        ['vess', 'membership']
       );
-      const docUrl = doc.id.toUrl();
-      const val: MembershipWithId = { ...content, ceramicId: docUrl };
-      const setPromise = this.setCreatedMemberships(docUrl);
+      const storeIDX = setIDX<CreatedMemberships, 'CreatedMemberships'>(
+        [val.ceramicId],
+        this.ceramic,
+        this.dataStore,
+        'CreatedMemberships',
+        'created'
+      );
       const uploadBackup = this.backupDataStore.uploadMembership(val);
-      await Promise.all([setPromise, uploadBackup]);
+      await Promise.all([storeIDX, uploadBackup]);
       return {
         status: 200,
-        streamId: docUrl,
+        streamId: val.ceramicId,
       };
     } catch (error) {
       return {
         status: 300,
         error: error,
-        result: "Failed to Issue Work Credential",
+        result: 'Failed to Issue membership',
         streamId: undefined,
       };
     }
-  };
-  setCreatedMemberships = async (contentId: string): Promise<void> => {
-    if (!this.dataStore || !this.ceramic?.did?.parent) return undefined;
-    const CreatedMemberships = await this.dataStore.get<
-      "CreatedMemberships",
-      CreatedMemberships
-    >("CreatedMemberships", this.ceramic?.did?.parent);
-    const currentVal = CreatedMemberships?.created ?? [];
-    const updatedVal = [...currentVal, contentId];
-    await this.dataStore.set("CreatedMemberships", {
-      created: updatedVal,
-    });
   };
 
   createEvent = async (
@@ -736,113 +708,74 @@ export class BaseVESS {
     ) {
       return {
         status: 300,
-        result: "You need to call connect first",
+        result: 'You need to call connect first',
         streamId: undefined,
       };
     }
     try {
-      const doc = await createTileDocument<Event>(
-        this.ceramic,
-        this.ceramic?.did?.parent,
+      const val: EventWithId = await createTileDoc<Event>(
         content,
-        getSchema(this.dataModel, "Event"),
-        ["vess", "event"]
+        this.ceramic,
+        this.dataModel,
+        'Event',
+        ['vess', 'event']
       );
-      const docUrl = doc.id.toUrl();
-      const val: EventWithId = { ...content, ceramicId: docUrl };
-      const setPromise = this.setIssuedEvents(docUrl);
+      const storeIDX = setIDX<IssuedEvents, 'IssuedEvents'>(
+        [val.ceramicId],
+        this.ceramic,
+        this.dataStore,
+        'IssuedEvents',
+        'issued'
+      );
       const uploadBackup = this.backupDataStore.uploadEvent(val);
-      await Promise.all([setPromise, uploadBackup]);
+      await Promise.all([storeIDX, uploadBackup]);
       return {
         status: 200,
-        streamId: docUrl,
+        streamId: val.ceramicId,
       };
     } catch (error) {
       return {
         status: 300,
         error: error,
-        result: "Failed to Issue Work Credential",
+        result: 'Failed to Issue event',
         streamId: undefined,
       };
-    }
-  };
-
-  setIssuedEvents = async (contentId: string): Promise<void> => {
-    if (!this.dataStore || !this.ceramic?.did?.parent) return;
-    try {
-      const IssuedEvents = await this.dataStore.get<
-        "IssuedEvents",
-        IssuedEvents
-      >("IssuedEvents", this.ceramic?.did?.parent);
-      const currentVal = IssuedEvents?.issued ?? [];
-      const updatedVal = [...currentVal, contentId];
-      await this.dataStore.set("IssuedEvents", {
-        issued: updatedVal,
-      });
-    } catch (error) {
-      console.log(error);
-      throw new Error("Error setIssuedEvents");
-    }
-  };
-
-  setIssuedMembershipSubjects = async (contentId: string): Promise<void> => {
-    if (!this.dataStore || !this.ceramic?.did?.parent) return;
-    try {
-      const CreatedMembershipSubjects = await this.dataStore.get<
-        "IssuedVerifiableMembershipSubjects",
-        IssuedVerifiableMembershipSubjects
-      >("IssuedVerifiableMembershipSubjects", this.ceramic?.did?.parent);
-      const currentVal = CreatedMembershipSubjects?.issued ?? [];
-      const updatedVal = [...currentVal, contentId];
-      await this.dataStore.set("IssuedVerifiableMembershipSubjects", {
-        issued: updatedVal,
-      });
-    } catch (error) {
-      console.log(error);
-      throw new Error("Error setIssuedMembershipSubjects");
     }
   };
 
   setHeldMembershipSubjects = async (contentIds: string[]): Promise<void> => {
     if (!this.dataStore || !this.ceramic?.did?.parent) return;
     try {
-      const HeldMembershipSubjects = await this.dataStore.get<
-        "HeldVerifiableMembershipSubjects",
-        HeldVerifiableMembershipSubjects
-      >("HeldVerifiableMembershipSubjects", this.ceramic?.did?.parent);
-      const currentVal = HeldMembershipSubjects?.held ?? [];
-      const updatedVal = [...currentVal, ...contentIds];
-      await this.dataStore.set("HeldVerifiableMembershipSubjects", {
-        held: updatedVal,
-      });
+      await setIDX<
+        HeldVerifiableMembershipSubjects,
+        'HeldVerifiableMembershipSubjects'
+      >(
+        contentIds,
+        this.ceramic,
+        this.dataStore,
+        'HeldVerifiableMembershipSubjects',
+        'held'
+      );
     } catch (error) {
-      console.log(error);
-      throw new Error("Error setHeldMembershipSubjects");
+      console.error(error);
+      throw new Error('Error setHeldMembershipSubjects');
     }
   };
-
-  setIssuedEventAttendanceVerifiableCredentials = async (
+  setHeldMembershipSubjectsWithBreaking = async (
     contentIds: string[]
   ): Promise<void> => {
     if (!this.dataStore || !this.ceramic?.did?.parent) return;
     try {
-      const IssuedEventAttendanceVerifiableCredentials =
-        await this.dataStore.get<
-          "IssuedEventAttendanceVerifiableCredentials",
-          IssuedEventAttendanceVerifiableCredentials
-        >(
-          "IssuedEventAttendanceVerifiableCredentials",
-          this.ceramic?.did?.parent
-        );
-      const currentVal =
-        IssuedEventAttendanceVerifiableCredentials?.issued ?? [];
-      const updatedVal = [...currentVal, ...contentIds];
-      await this.dataStore.set("IssuedEventAttendanceVerifiableCredentials", {
-        issued: updatedVal,
-      });
+      await setIDXWithBreaking<'HeldVerifiableMembershipSubjects'>(
+        contentIds,
+        this.ceramic,
+        this.dataStore,
+        'HeldVerifiableMembershipSubjects',
+        'held'
+      );
     } catch (error) {
-      console.log(error);
-      throw new Error("Error setIssuedEventAttendanceVerifiableCredentials");
+      console.error(error);
+      throw new Error('Error setHeldMembershipSubjects');
     }
   };
 
@@ -851,18 +784,241 @@ export class BaseVESS {
   ): Promise<void> => {
     if (!this.dataStore || !this.ceramic?.did?.parent) return;
     try {
-      const HeldEventAttendanceVerifiableCredentials = await this.dataStore.get<
-        "HeldEventAttendanceVerifiableCredentials",
-        HeldEventAttendanceVerifiableCredentials
-      >("HeldEventAttendanceVerifiableCredentials", this.ceramic?.did?.parent);
-      const currentVal = HeldEventAttendanceVerifiableCredentials?.held ?? [];
-      const updatedVal = [...currentVal, ...contentIds];
-      await this.dataStore.set("HeldEventAttendanceVerifiableCredentials", {
-        held: updatedVal,
-      });
+      await setIDX<
+        HeldEventAttendanceVerifiableCredentials,
+        'HeldEventAttendanceVerifiableCredentials'
+      >(
+        contentIds,
+        this.ceramic,
+        this.dataStore,
+        'HeldEventAttendanceVerifiableCredentials',
+        'held'
+      );
     } catch (error) {
-      console.log(error);
-      throw new Error("Error setHeldEventAttendanceVerifiableCredentials");
+      console.error(error);
+      throw new Error('Error setHeldEventAttendanceVerifiableCredentials');
+    }
+  };
+
+  createTask = async (
+    content: TaskCredential
+  ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
+    if (
+      !this.ceramic ||
+      !this.ceramic?.did?.parent ||
+      !this.dataStore ||
+      !this.backupDataStore
+    ) {
+      return {
+        status: 300,
+        result: 'You need to call connect first',
+        streamId: undefined,
+      };
+    }
+    try {
+      const val = await createTileDoc<TaskCredential>(
+        content,
+        this.ceramic,
+        this.dataModel,
+        'TaskCredential',
+        ['vess', 'task']
+      );
+      await setIDX<HeldTaskCredentials, 'HeldTaskCredentials'>(
+        [val.ceramicId],
+        this.ceramic,
+        this.dataStore,
+        'HeldTaskCredentials',
+        'held'
+      );
+      return {
+        status: 200,
+        streamId: val.ceramicId,
+      };
+    } catch (error) {
+      return {
+        status: 300,
+        error: error,
+        result: 'Failed to create Task',
+        streamId: undefined,
+      };
+    }
+  };
+
+  createBusinessProfile = async (
+    content: BusinessProfile
+  ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
+    if (
+      !this.ceramic ||
+      !this.ceramic?.did?.parent ||
+      !this.dataStore ||
+      !this.backupDataStore
+    ) {
+      return {
+        status: 300,
+        result: 'You need to call connect first',
+        streamId: undefined,
+      };
+    }
+    try {
+      const setTile = createTileDoc<BusinessProfile>(
+        content,
+        this.ceramic,
+        this.dataModel,
+        'BusinessProfile',
+        ['vess', 'businessProfile']
+      );
+      const storeIDX = setUniqueIDX<BusinessProfile, 'BusinessProfile'>(
+        content,
+        this.ceramic,
+        this.dataStore,
+        'BusinessProfile'
+      );
+      const res = await Promise.all([setTile, storeIDX]);
+      return {
+        status: 200,
+        streamId: res[0].ceramicId,
+      };
+    } catch (error) {
+      return {
+        status: 300,
+        error: error,
+        result: 'Failed to Issue event',
+        streamId: undefined,
+      };
+    }
+  };
+
+  storeSocialLinks = async (
+    content: SocialLinks
+  ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
+    if (
+      !this.ceramic ||
+      !this.ceramic?.did?.parent ||
+      !this.dataStore ||
+      !this.backupDataStore
+    ) {
+      return {
+        status: 300,
+        result: 'You need to call connect first',
+        streamId: undefined,
+      };
+    }
+    try {
+      const setTile = createTileDoc<SocialLinks>(
+        content,
+        this.ceramic,
+        this.dataModel,
+        'SocialLinks',
+        ['vess', 'SocialLinks']
+      );
+      const storeIDX = setUniqueIDX<SocialLinks, 'SocialLinks'>(
+        content,
+        this.ceramic,
+        this.dataStore,
+        'SocialLinks'
+      );
+      const res = await Promise.all([setTile, storeIDX]);
+      return {
+        status: 200,
+        streamId: res[0].ceramicId,
+      };
+    } catch (error) {
+      return {
+        status: 300,
+        error: error,
+        result: 'Failed to Issue event',
+        streamId: undefined,
+      };
+    }
+  };
+
+  storeHighlightedCredentials = async (
+    content: HighlightedCredentials
+  ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
+    if (
+      !this.ceramic ||
+      !this.ceramic?.did?.parent ||
+      !this.dataStore ||
+      !this.backupDataStore
+    ) {
+      return {
+        status: 300,
+        result: 'You need to call connect first',
+        streamId: undefined,
+      };
+    }
+    try {
+      const setTile = createTileDoc<HighlightedCredentials>(
+        content,
+        this.ceramic,
+        this.dataModel,
+        'HighlightedCredentials',
+        ['vess', 'HighlightedCredentials']
+      );
+      const storeIDX = setUniqueIDX<
+        HighlightedCredentials,
+        'HighlightedCredentials'
+      >(content, this.ceramic, this.dataStore, 'HighlightedCredentials');
+      const res = await Promise.all([setTile, storeIDX]);
+      return {
+        status: 200,
+        streamId: res[0].ceramicId,
+      };
+    } catch (error) {
+      return {
+        status: 300,
+        error: error,
+        result: 'Failed to Issue event',
+        streamId: undefined,
+      };
+    }
+  };
+
+  createSelfClaimedMembershipSubject = async (
+    content: SelfClaimedMembershipSubject
+  ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
+    if (
+      !this.ceramic ||
+      !this.ceramic?.did?.parent ||
+      !this.dataStore ||
+      !this.backupDataStore
+    ) {
+      return {
+        status: 300,
+        result: 'You need to call connect first',
+        streamId: undefined,
+      };
+    }
+    try {
+      const val: WithCeramicId<SelfClaimedMembershipSubject> =
+        await createTileDoc<SelfClaimedMembershipSubject>(
+          content,
+          this.ceramic,
+          this.dataModel,
+          'SelfClaimedMembershipSubject',
+          ['vess', 'membership', 'self-claimed']
+        );
+      await setIDX<
+        HeldSelfClaimedMembershipSubjects,
+        'HeldSelfClaimedMembershipSubjects'
+      >(
+        [val.ceramicId],
+        this.ceramic,
+        this.dataStore,
+        'HeldSelfClaimedMembershipSubjects',
+        'held'
+      );
+      return {
+        status: 200,
+        streamId: val.ceramicId,
+      };
+    } catch (error) {
+      return {
+        status: 300,
+        error: error,
+        result: 'Failed to Issue Credentials',
+        streamId: undefined,
+      };
     }
   };
 
@@ -881,14 +1037,14 @@ export class BaseVESS {
     if (!this.ceramic || !this.ceramic?.did?.parent || !this.backupDataStore) {
       return {
         status: 300,
-        result: "You need to call connect first",
+        result: 'You need to call connect first',
       };
     }
     try {
       const nowTimestamp = convertDateToTimestampStr(new Date());
       const doc = await TileDocument.load<WorkCredential>(this.ceramic, id);
       await doc.update({ ...newItem, updatedAt: nowTimestamp });
-      await this.backupDataStore.uploadCRDL({ ...newItem, backupId: id });
+      await this.backupDataStore.uploadCRDL({ ...newItem, ceramicId: id });
       return {
         status: 200,
       };
@@ -896,7 +1052,7 @@ export class BaseVESS {
       return {
         status: 300,
         error: error,
-        result: "Failed to Update Work Credential",
+        result: 'Failed to Update Work Credential',
       };
     }
   };
@@ -911,7 +1067,7 @@ export class BaseVESS {
     if (!this.ceramic || !this.ceramic?.did?.parent || !this.backupDataStore) {
       return {
         status: 300,
-        result: "You need to call connect first",
+        result: 'You need to call connect first',
       };
     }
     try {
@@ -926,7 +1082,65 @@ export class BaseVESS {
       return {
         status: 300,
         error: error,
-        result: "Failed to Update Event",
+        result: 'Failed to Update Event',
+      };
+    }
+  };
+
+  /**
+   * Update Org
+   * @param id
+   * @param newItem
+   * @returns
+   */
+  updateOrganization = async (
+    newItem: OrganizationWIthId,
+    saveBackup: boolean = true
+  ): Promise<BaseResponse> => {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.backupDataStore) {
+      return {
+        status: 300,
+        result: 'You need to call connect first',
+      };
+    }
+    try {
+      const { ceramicId, ...content } = newItem;
+      await updateTileDoc<Organization>(this.ceramic, ceramicId, content);
+      if (saveBackup) {
+        await this.backupDataStore.uploadOrg({ ...newItem });
+      }
+      return {
+        status: 200,
+      };
+    } catch (error) {
+      return {
+        status: 300,
+        error: error,
+        result: 'Failed to Update Event',
+      };
+    }
+  };
+
+  updateTask = async (
+    newItem: WithCeramicId<TaskCredential>
+  ): Promise<BaseResponse> => {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.backupDataStore) {
+      return {
+        status: 300,
+        result: 'You need to call connect first',
+      };
+    }
+    try {
+      const { ceramicId, ...content } = newItem;
+      await updateTileDoc<TaskCredential>(this.ceramic, ceramicId, content);
+      return {
+        status: 200,
+      };
+    } catch (error) {
+      return {
+        status: 300,
+        error: error,
+        result: 'Failed to Update Task',
       };
     }
   };
@@ -944,18 +1158,18 @@ export class BaseVESS {
     if (!this.dataStore || !this.ceramic?.did?.parent)
       return {
         status: 300,
-        result: "You need to call connect first",
+        result: 'You need to call connect first',
       };
     try {
       const heldWorkCredentials = await this.dataStore.get<
-        "heldWorkCredentials",
+        'heldWorkCredentials',
         HeldWorkCredentials
-      >("heldWorkCredentials", this.ceramic?.did?.parent);
+      >('heldWorkCredentials', this.ceramic?.did?.parent);
       const workCRDLs = heldWorkCredentials?.held ?? [];
       const updatedCredentails = workCRDLs.filter(
         (c) => !contentIds.includes(c)
       );
-      await this.dataStore.set("heldWorkCredentials", {
+      await this.dataStore.set('heldWorkCredentials', {
         held: updatedCredentails,
       });
       return {
@@ -965,8 +1179,61 @@ export class BaseVESS {
       return {
         status: 300,
         error: error,
-        result: "Failed to Delete Work Credential",
+        result: 'Failed to Delete Work Credential',
       };
+    }
+  };
+
+  deleteHeldMembershipSubjectsFromIDX = async (
+    streamId: string
+  ): Promise<BaseResponse> => {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
+      throw new Error(
+        `You need to call connect first: ${this.ceramic} | ${this.dataStore}`
+      );
+    }
+    try {
+      await deleteFromIDX<
+        HeldVerifiableMembershipSubjects,
+        'HeldVerifiableMembershipSubjects'
+      >(
+        streamId,
+        this.ceramic,
+        this.dataStore,
+        'HeldVerifiableMembershipSubjects',
+        'held'
+      );
+      return {
+        status: 200,
+      };
+    } catch (error) {
+      throw new Error(`Failed to Issue Credential:${error}`);
+    }
+  };
+  deleteHeldEventAttendanceFromIDX = async (
+    streamId: string
+  ): Promise<BaseResponse> => {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
+      throw new Error(
+        `You need to call connect first: ${this.ceramic} | ${this.dataStore}`
+      );
+    }
+    try {
+      await deleteFromIDX<
+        HeldEventAttendanceVerifiableCredentials,
+        'HeldEventAttendanceVerifiableCredentials'
+      >(
+        streamId,
+        this.ceramic,
+        this.dataStore,
+        'HeldEventAttendanceVerifiableCredentials',
+        'held'
+      );
+      return {
+        status: 200,
+      };
+    } catch (error) {
+      throw new Error(`Failed to Issue Credential:${error}`);
     }
   };
 
@@ -978,28 +1245,28 @@ export class BaseVESS {
     const dataStore =
       this.dataStore || new DIDDataStore({ ceramic, model: this.dataModel });
     const HeldWorkCredentials = await dataStore.get<
-      "heldWorkCredentials",
+      'heldWorkCredentials',
       HeldWorkCredentials
-    >("heldWorkCredentials", did);
+    >('heldWorkCredentials', did);
     return !HeldWorkCredentials?.held ? [] : HeldWorkCredentials?.held;
   };
 
   getHeldEventAttendanceVerifiableCredentialStreamIds = async (
     did?: string
   ): Promise<string[]> => {
+    if (!did) return [];
     const ceramic = this.ceramic || new CeramicClient(this.ceramicUrl);
-    const pkhDid = did || this.ceramic?.did?.parent;
     const dataStore =
       this.dataStore ||
       new DIDDataStore({
         ceramic: ceramic,
         model: this.dataModel,
-        id: pkhDid,
+        id: did,
       });
     const HeldEventAttendanceVerifiableCredentials = await dataStore.get<
-      "HeldEventAttendanceVerifiableCredentials",
+      'HeldEventAttendanceVerifiableCredentials',
       HeldEventAttendanceVerifiableCredentials
-    >("HeldEventAttendanceVerifiableCredentials", pkhDid);
+    >('HeldEventAttendanceVerifiableCredentials', did);
     return !HeldEventAttendanceVerifiableCredentials?.held
       ? []
       : HeldEventAttendanceVerifiableCredentials?.held;

@@ -5,8 +5,10 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
+import { DeliverableItem } from './TaskCredential';
+
 export interface VerifiableWorkCredential {
-  "@context": string[];
+  '@context': string[];
   type: string[];
   id: string;
   issuer: {
@@ -109,16 +111,6 @@ export interface Transaction {
   issuedTimestamp?: string;
   relatedAddresses?: string[];
   relatedTxHashes?: string[];
-}
-export interface DeliverableItem {
-  /**
-   * current formats are url or cid
-   */
-  format?: string;
-  /**
-   * work deliverable value(url/cid)
-   */
-  value?: string;
 }
 export interface Signatures {
   /**

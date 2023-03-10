@@ -3,102 +3,87 @@ import {
   EventAttendanceWithId,
   MembershipSubjectWithId,
   WorkCredentialWithId,
-} from "./interface/index.js";
+} from './interface/index.js';
 import {
-  createTileDocument,
+  createTileDoc,
   getDataModel,
-  getSchema,
+  setIDX,
   loadSession,
   removeSession,
-} from "./utils/ceramicHelper.js";
-import { convertDateToTimestampStr } from "./utils/common.js";
+} from './utils/ceramicHelper.js';
+import { convertDateToTimestampStr } from './utils/common.js';
 import {
   createEIP712WorkCredential,
-  createEventAttendanceCredential,
-  createVerifiableMembershipSubjectCredential,
+  createEventAttendanceVCTileDoc,
+  createMembershipVCTileDoc,
   safeSend,
   _getEIP712WorkCredentialSubjectSignature,
-} from "./utils/providerHelper.js";
-
-import { EthereumWebAuth, getAccountId } from "@didtools/pkh-ethereum";
-import { CeramicClient } from "@ceramicnetwork/http-client";
-import { DIDDataStore } from "@glazed/did-datastore";
-import {
-  WorkCredential,
-  WorkSubject,
-} from "./__generated__/types/WorkCredential";
-import {
-  EventAttendanceVerifiableCredential,
-  VerifiableMembershipSubjectCredential,
-} from "./interface/eip712.js";
-import { VerifiableMembershipSubject } from "./__generated__/types/VerifiableMembershipSubjectCredential";
-import { EventAttendance } from "./__generated__/types/EventAttendanceVerifiableCredential";
+} from './utils/providerHelper.js';
+import { AccountId } from 'caip';
+import { EthereumWebAuth, getAccountId } from '@didtools/pkh-ethereum';
+import { CeramicClient } from '@ceramicnetwork/http-client';
+import { DIDDataStore } from '@glazed/did-datastore';
+import { VerifiableMembershipSubject } from './__generated__/types/VerifiableMembershipSubjectCredential';
+import { EventAttendance } from './__generated__/types/EventAttendanceVerifiableCredential';
 import {
   AuthResponse,
   BaseVESS,
   PROD_CERAMIC_URL,
   TESTNET_CERAMIC_URL,
-} from "./baseVess.js";
-import { issueEventAttendancesParam } from "./utils/backupDataStoreHelper.js";
-import { DIDSession } from "did-session";
-
-export type IsAuthentificatedProps = {
-  isAuthentificated: boolean;
-  session?: DIDSession;
-  did?: string;
-};
+} from './baseVess.js';
+import { issueEventAttendancesParam } from './utils/backupDataStoreHelper.js';
+import {
+  HeldWorkCredentials,
+  WorkCredential,
+  WorkSubject,
+  IssuedEventAttendanceVerifiableCredentials,
+  IssuedVerifiableMembershipSubjects,
+} from './__generated__/index.js';
+import { DIDSession } from 'did-session';
 
 export class VESS extends BaseVESS {
   provider = undefined as any | undefined;
   account = undefined as string | undefined;
 
   constructor(
-    env: "mainnet" | "testnet-clay" = "mainnet",
+    env: 'mainnet' | 'testnet-clay' = 'mainnet',
     ceramic?: CeramicClient
   ) {
     super(env, ceramic);
   }
 
   connect = async (
+    address: string,
     provider?: any,
-    env: "mainnet" | "testnet-clay" = "mainnet"
+    env: 'mainnet' | 'testnet-clay' = 'mainnet'
   ): Promise<AuthResponse> => {
     this.dataModel = getDataModel(env);
     this.env = env;
     this.ceramicUrl =
-      this.env === "mainnet" ? PROD_CERAMIC_URL : TESTNET_CERAMIC_URL;
+      this.env === 'mainnet' ? PROD_CERAMIC_URL : TESTNET_CERAMIC_URL;
 
     if (!provider) {
       if ((window as any).ethereum) {
         console.log(
-          "VESS SDK: You need to pass the provider as an argument in the `connect()` function. We will be using window.ethereum by default."
+          'VESS SDK: You need to pass the provider as an argument in the `connect()` function. We will be using window.ethereum by default.'
         );
         provider = (window as any).ethereum;
       }
     }
     if (!provider) {
       throw new Error(
-        "An ethereum provider is required to proceed with the connection to Ceramic."
+        'An ethereum provider is required to proceed with the connection to Ceramic.'
       );
     }
 
     this.provider = provider;
-    let accounts: string[] = [];
-    try {
-      accounts = await safeSend(this.provider, "eth_accounts", []);
-    } catch (e) {
-      console.log(e);
-      throw new Error(
-        `Error enabling Ethereum provider. Message: ${JSON.stringify(e)}`
-      );
-    }
-    this.account = accounts[0];
+    this.account = address;
 
     try {
-      const accountId = await getAccountId(
-        this.provider,
-        this.account.toLowerCase()
-      );
+      const accountId: AccountId = new AccountId({
+        address: this.account.toLowerCase(),
+        chainId: `eip155:1`,
+      });
       const authMethod = await EthereumWebAuth.getAuthMethod(
         this.provider,
         accountId
@@ -116,7 +101,7 @@ export class VESS extends BaseVESS {
       return { session: this.session, ceramic: this.ceramic, env: this.env };
     } catch (e) {
       console.log(e);
-      throw new Error("Error authorizing DID session.");
+      throw new Error('Error authorizing DID session.');
     }
   };
 
@@ -127,12 +112,28 @@ export class VESS extends BaseVESS {
     this.ceramic = undefined;
   };
 
-  isAuthenticated = (): IsAuthentificatedProps => {
-    return {
-      isAuthentificated: !!this.session,
-      session: this.session,
-      did: this.ceramic?.did?.parent,
-    };
+  autoConnect = async (
+    env: 'mainnet' | 'testnet-clay' = 'mainnet'
+  ): Promise<AuthResponse | null> => {
+    const sessionStr = localStorage.getItem('ceramic-session');
+    if (sessionStr) {
+      const session = await DIDSession.fromSession(sessionStr);
+      this.dataModel = getDataModel(env);
+      this.env = env;
+      this.ceramicUrl =
+        this.env === 'mainnet' ? PROD_CERAMIC_URL : TESTNET_CERAMIC_URL;
+      this.session = session;
+      this.ceramic = new CeramicClient(this.ceramicUrl);
+      this.ceramic.did = this.session.did;
+      this.dataStore = new DIDDataStore({
+        ceramic: this.ceramic,
+        model: this.dataModel,
+        id: this.ceramic?.did?.parent,
+      });
+      console.log(`ceramic authorized! env: ${this.env}`);
+      return { session: this.session, ceramic: this.ceramic, env: this.env };
+    }
+    return null;
   };
 
   // ============================== Issue ==============================
@@ -153,7 +154,7 @@ export class VESS extends BaseVESS {
     ) {
       return {
         status: 300,
-        result: "You need to call connect first",
+        result: 'You need to call connect first',
         streamId: undefined,
       };
     }
@@ -163,118 +164,143 @@ export class VESS extends BaseVESS {
         content,
         this.provider
       );
-      const doc = await this.createWorkCredential(credential);
-      const docUrl = doc.id.toUrl();
-      const crdl: WorkCredentialWithId = { ...credential, backupId: docUrl };
-      const setHeldWC = this.setHeldWorkCredentials([docUrl]);
-      const uploadBackup = this.backupDataStore.uploadCRDL(crdl);
-      await Promise.all([setHeldWC, uploadBackup]);
+      const val: WorkCredentialWithId = await createTileDoc<WorkCredential>(
+        credential,
+        this.ceramic,
+        this.dataModel,
+        'WorkCredential',
+        ['vess', 'workCredential']
+      );
+      if (!val.ceramicId) throw new Error('falild to create credentail');
+      const storeIDX = setIDX<HeldWorkCredentials, 'heldWorkCredentials'>(
+        [val.ceramicId],
+        this.ceramic,
+        this.dataStore,
+        'heldWorkCredentials',
+        'held'
+      );
+      const uploadBackup = this.backupDataStore.uploadCRDL(val);
+      await Promise.all([storeIDX, uploadBackup]);
       return {
         status: 200,
-        streamId: docUrl,
+        streamId: val.ceramicId,
       };
     } catch (error) {
       console.log(error);
       return {
         status: 300,
         error: error,
-        result: "Failed to Issue Work Credential",
+        result: 'Failed to Issue Work Credential',
         streamId: undefined,
       };
     }
   };
 
   issueMembershipSubject = async (
-    content: VerifiableMembershipSubject
-  ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
+    contents: VerifiableMembershipSubject[]
+  ): Promise<CustomResponse<{ streamIds: string[] }>> => {
     if (
       !this.ceramic ||
       !this.ceramic?.did?.parent ||
       !this.dataStore ||
       !this.backupDataStore
     ) {
-      return {
-        status: 300,
-        result: "You need to call connect first",
-        streamId: undefined,
-      };
+      throw new Error(
+        `You need to call connect first: ${this.ceramic} | ${this.dataStore}`
+      );
     }
 
     try {
-      // TODO: sign and create verifiable credential before save data
-      const vc = await createVerifiableMembershipSubjectCredential(
-        content,
-        this.provider
-      );
-      const doc =
-        await createTileDocument<VerifiableMembershipSubjectCredential>(
+      let promises: Promise<MembershipSubjectWithId>[] = [];
+      for (const content of contents) {
+        const val = createMembershipVCTileDoc(
+          content,
           this.ceramic,
-          this.ceramic?.did?.parent,
-          vc,
-          getSchema(this.dataModel, "VerifiableMembershipSubjectCredential"),
-          ["vess", "membershipCredential"]
+          this.dataModel,
+          this.provider
         );
-      const docUrl = doc.id.toUrl();
-      const val: MembershipSubjectWithId = { ...vc, ceramicId: docUrl };
-      const setOrgs = this.setIssuedMembershipSubjects(docUrl);
-      const uploadBackup = this.backupDataStore.uploadMembershipSubject(val);
-      await Promise.all([setOrgs, uploadBackup]);
+        promises.push(val);
+      }
+      const vals = await Promise.all(promises);
+      const ids = vals.map((v) => v.ceramicId);
+      const storeIDX = setIDX<
+        IssuedVerifiableMembershipSubjects,
+        'IssuedVerifiableMembershipSubjects'
+      >(
+        ids,
+        this.ceramic,
+        this.dataStore,
+        'IssuedVerifiableMembershipSubjects',
+        'issued'
+      );
+
+      const uploadBackup =
+        this.backupDataStore.uploadMultipleMembershipSubject(vals);
+      await Promise.all([storeIDX, uploadBackup]);
       return {
         status: 200,
-        streamId: docUrl,
+        streamIds: ids,
       };
     } catch (error) {
       return {
         status: 300,
         error: error,
-        result: "Failed to Issue Work Credential",
-        streamId: undefined,
+        result: 'Failed to Issue Work Credential',
+        streamIds: [],
       };
     }
   };
 
   issueEventAttendanceCredential = async (
-    content: EventAttendance
-  ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
+    contents: EventAttendance[]
+  ): Promise<CustomResponse<{ streamIds: string[] }>> => {
     if (
       !this.ceramic ||
       !this.ceramic?.did?.parent ||
       !this.dataStore ||
       !this.backupDataStore
     ) {
-      return {
-        status: 300,
-        result: "You need to call connect first",
-        streamId: undefined,
-      };
+      throw new Error(
+        `You need to call connect first: ${this.ceramic} | ${this.dataStore}`
+      );
     }
     try {
-      const vc = await createEventAttendanceCredential(content, this.provider);
+      let promises: Promise<EventAttendanceWithId>[] = [];
+      for (const content of contents) {
+        const val = createEventAttendanceVCTileDoc(
+          content,
+          this.ceramic,
+          this.dataModel,
+          this.provider
+        );
+        promises.push(val);
+      }
+      const vals = await Promise.all(promises);
+      const ids = vals.map((v) => v.ceramicId);
 
-      const doc = await createTileDocument<EventAttendanceVerifiableCredential>(
+      const storeIDX = setIDX<
+        IssuedEventAttendanceVerifiableCredentials,
+        'IssuedEventAttendanceVerifiableCredentials'
+      >(
+        ids,
         this.ceramic,
-        this.ceramic?.did?.parent,
-        vc,
-        getSchema(this.dataModel, "EventAttendanceVerifiableCredential"),
-        ["vess", "eventAttendanceCredential"]
+        this.dataStore,
+        'IssuedEventAttendanceVerifiableCredentials',
+        'issued'
       );
-      const docUrl = doc.id.toUrl();
-      const val: EventAttendanceWithId = { ...vc, ceramicId: docUrl };
-      const setIssued = this.setIssuedEventAttendanceVerifiableCredentials([
-        docUrl,
-      ]);
-      const uploadBackup = this.backupDataStore.uploadEventAttendance(val);
-      await Promise.all([setIssued, uploadBackup]);
+      const uploadBackups =
+        this.backupDataStore.uploadMultipleEventAttendances(vals);
+      await Promise.all([storeIDX, uploadBackups]);
       return {
         status: 200,
-        streamId: docUrl,
+        streamIds: ids,
       };
     } catch (error) {
       return {
-        status: 300,
+        status: 500,
         error: error,
-        result: "Failed to Issue Work Credential",
-        streamId: undefined,
+        result: 'Failed to Issue Work Credential',
+        streamIds: [],
       };
     }
   };
@@ -282,7 +308,7 @@ export class VESS extends BaseVESS {
   issueEventAttendancesFromProxy = async (
     param: issueEventAttendancesParam
   ): Promise<{ [x: string]: string | string[] }> => {
-    if (!this.backupDataStore) throw new Error("you need to initialize first");
+    if (!this.backupDataStore) throw new Error('you need to initialize first');
     return await this.backupDataStore.issueEventAttendancesFromProxy(param);
   };
 
@@ -309,7 +335,7 @@ export class VESS extends BaseVESS {
       },
       updatedAt: nowTimestamp,
     };
-    await this.backupDataStore.uploadCRDL({ ...crdl, backupId: id });
+    await this.backupDataStore.uploadCRDL({ ...crdl, ceramicId: id });
     return crdl;
   };
 
@@ -329,7 +355,7 @@ export const getVESS = (dev: boolean = false): VESS => {
   if (vess) {
     return vess;
   }
-  const env = !dev ? "mainnet" : "testnet-clay";
+  const env = !dev ? 'mainnet' : 'testnet-clay';
   vess = new VESS(env);
   return vess;
 };
