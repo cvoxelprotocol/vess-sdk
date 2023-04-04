@@ -32,6 +32,11 @@ import {
   TaskCredential,
   Tx,
   HeldTaskCredentials,
+  Certification,
+  IssuedCertifications,
+  CertificationSubject,
+  IssuedCertificationSubjects,
+  HeldCertificationSubjects,
 } from '../__generated__/index.js';
 
 export type OldWorkCredential = {
@@ -153,6 +158,11 @@ export type ModelTypes = ModelTypeAliases<
     TaskCredential: TaskCredential;
     Tx: Tx;
     HeldTaskCredentials: HeldTaskCredentials;
+    Certification: Certification;
+    CertificationSubject: CertificationSubject;
+    IssuedCertifications: IssuedCertifications;
+    IssuedCertificationSubjects: IssuedCertificationSubjects;
+    HeldCertificationSubjects: HeldCertificationSubjects;
   },
   {
     workCredential: 'WorkCredential';
@@ -185,6 +195,11 @@ export type ModelTypes = ModelTypeAliases<
     TaskCredential: 'TaskCredential';
     Tx: 'Tx';
     HeldTaskCredentials: 'HeldTaskCredentials';
+    Certification: 'Certification';
+    CertificationSubject: 'CertificationSubject';
+    IssuedCertifications: 'IssuedCertifications';
+    IssuedCertificationSubjects: 'IssuedCertificationSubjects';
+    HeldCertificationSubjects: 'HeldCertificationSubjects';
   }
 >;
 
@@ -222,6 +237,11 @@ const AliasType = {
   TaskCredential: 'TaskCredential',
   Tx: 'Tx',
   HeldTaskCredentials: 'HeldTaskCredentials',
+  Certification: 'Certification',
+  CertificationSubject: 'CertificationSubject',
+  IssuedCertifications: 'IssuedCertifications',
+  IssuedCertificationSubjects: 'IssuedCertificationSubjects',
+  HeldCertificationSubjects: 'HeldCertificationSubjects',
 } as const;
 export type AliasTypes = typeof AliasType[keyof typeof AliasType];
 export type Alias = keyof ModelTypes['definitions'];

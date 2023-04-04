@@ -1,3 +1,4 @@
+import { Certification, CertificationSubject } from '../__generated__';
 import {
   WorkCredential,
   WorkSubject,
@@ -192,6 +193,13 @@ export const EVENT_ATTENDANCE_EIP712_TYPE: TypedData[] = [
   { name: 'eventId', type: 'string' },
 ];
 
+export const CERTIFICATION_EIP712_TYPE: TypedData[] = [
+  { name: 'id', type: 'string' },
+  { name: 'certificationId', type: 'string' },
+  { name: 'certificationName', type: 'string' },
+  { name: 'image', type: 'string' },
+];
+
 export const CLIENT_EIP712_TYPE: TypedData[] = [
   { name: 'format', type: 'string' },
   { name: 'value', type: 'string' },
@@ -350,6 +358,15 @@ export type VerifiableMembershipSubjectCredential = VerifiableCredential & {
 export type EventAttendanceVerifiableCredential = VerifiableCredential & {
   credentialSubject: EventAttendance;
 };
+
+export type CertificationVerifiableCredential = VerifiableCredential & {
+  credentialSubject: CertificationSubject;
+};
+
+export type CertificationVerifiableCredentialWithCertification =
+  CertificationVerifiableCredential & {
+    certification: Certification;
+  };
 
 export interface EIP712CredentialMessageTypes extends EIP712MessageTypes {
   VerifiableCredential: typeof VERIFIABLE_CREDENTIAL_EIP712_TYPE;

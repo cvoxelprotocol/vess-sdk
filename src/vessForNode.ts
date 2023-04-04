@@ -5,6 +5,7 @@ import {
   MembershipSubjectWithId,
   MembershipWithId,
   OrganizationWIthId,
+  WithCeramicId,
   WorkCredentialWithId,
 } from './interface/index.js';
 import { createTileDoc, getDataModel, setIDX } from './utils/ceramicHelper.js';
@@ -12,6 +13,7 @@ import { createTileDoc, getDataModel, setIDX } from './utils/ceramicHelper.js';
 import { CeramicClient } from '@ceramicnetwork/http-client';
 import { DIDDataStore } from '@glazed/did-datastore';
 import {
+  CertificationVerifiableCredential,
   EIP712MessageTypes,
   EventAttendance,
   EventAttendanceVerifiableCredential,
@@ -24,7 +26,10 @@ import { DIDSession } from 'did-session';
 import { getTempAuthMethod } from './utils/nodeHelper.js';
 import { PROD_CERAMIC_URL, TESTNET_CERAMIC_URL, BaseVESS } from './baseVess.js';
 import {
+  Certification,
+  CertificationSubject,
   HeldWorkCredentials,
+  IssuedCertificationSubjects,
   IssuedEventAttendanceVerifiableCredentials,
   IssuedVerifiableMembershipSubjects,
   WorkCredential,
@@ -273,6 +278,76 @@ export class VessForNode extends BaseVESS {
         this.ceramic,
         this.dataStore,
         'IssuedEventAttendanceVerifiableCredentials',
+        'issued'
+      );
+      return {
+        status: 200,
+        docs: docUrls,
+      };
+    } catch (error) {
+      return {
+        status: 300,
+        error: error,
+        result: 'Failed to Issue Work Credential',
+        docs: [],
+      };
+    }
+  };
+
+  issueCertificationSubject = async (
+    content: WithCeramicId<Certification>,
+    issuerAddress: string,
+    holderDids: string[],
+    signTypedData: SignTypedDataForNode
+  ): Promise<CustomResponse<{ docs: string[] }>> => {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
+      return {
+        status: 300,
+        result: 'You need to call connect first',
+        docs: [],
+      };
+    }
+    try {
+      const issuePromises: Promise<CertificationVerifiableCredential>[] = [];
+      for (const did of holderDids) {
+        const subject: CertificationSubject = {
+          id: did,
+          certificationId: content.ceramicId,
+          certificationName: content.name || '',
+          image: content.image,
+        };
+        const credentialId = `${content.ceramicId}-${did}`;
+        const issuePromise =
+          createVerifiableCredentialForNode<CertificationVerifiableCredential>(
+            issuerAddress,
+            credentialId,
+            VESS_CREDENTIALS.CERTIFICATION,
+            subject,
+            signTypedData
+          );
+        issuePromises.push(issuePromise);
+      }
+      const vcs = await Promise.all(issuePromises);
+      const docsPromises: Promise<
+        WithCeramicId<CertificationVerifiableCredential>
+      >[] = [];
+      for (const vc of vcs) {
+        const docPromise = createTileDoc<CertificationVerifiableCredential>(
+          vc,
+          this.ceramic,
+          this.dataModel,
+          'CertificationSubject',
+          ['vess', 'CertificationSubject']
+        );
+        docsPromises.push(docPromise);
+      }
+      const docs = await Promise.all(docsPromises);
+      const docUrls = docs.map((doc) => doc.ceramicId);
+      await setIDX<IssuedCertificationSubjects, 'IssuedCertificationSubjects'>(
+        docUrls,
+        this.ceramic,
+        this.dataStore,
+        'IssuedCertificationSubjects',
         'issued'
       );
       return {

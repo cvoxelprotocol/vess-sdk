@@ -57,8 +57,13 @@ import {
   Event,
   TaskCredential,
   HeldTaskCredentials,
+  Certification,
+  IssuedCertifications,
+  IssuedCertificationSubjects,
+  HeldCertificationSubjects,
 } from './__generated__/index.js';
 import {
+  CertificationVerifiableCredential,
   EventAttendanceVerifiableCredential,
   VerifiableMembershipSubjectCredential,
 } from './interface/eip712.js';
@@ -1018,6 +1023,114 @@ export class BaseVESS {
         error: error,
         result: 'Failed to Issue Credentials',
         streamId: undefined,
+      };
+    }
+  };
+
+  // internship
+  getCertification = async (
+    streamId?: string
+  ): Promise<WithCeramicId<Certification> | undefined> => {
+    if (!streamId) return undefined;
+    return await getTileDoc<Certification>(
+      streamId,
+      this.ceramic || new CeramicClient(this.ceramicUrl)
+    );
+  };
+  getIssuedCertification = async (
+    did?: string
+  ): Promise<WithCeramicId<Certification>[]> => {
+    return await this.getIDX<
+      IssuedCertifications,
+      'IssuedCertifications',
+      Certification
+    >('IssuedCertifications', did);
+  };
+
+  getIssuedCertificationSubjects = async (
+    did?: string
+  ): Promise<WithCeramicId<CertificationVerifiableCredential>[]> => {
+    return await this.getIDX<
+      IssuedCertificationSubjects,
+      'IssuedCertificationSubjects',
+      CertificationVerifiableCredential
+    >('IssuedCertificationSubjects', did);
+  };
+
+  getHeldCertificationSubjects = async (
+    did?: string
+  ): Promise<WithCeramicId<CertificationVerifiableCredential>[]> => {
+    return await this.getIDX<
+      HeldCertificationSubjects,
+      'HeldCertificationSubjects',
+      CertificationVerifiableCredential
+    >('HeldCertificationSubjects', did);
+  };
+
+  createCertification = async (
+    content: Certification
+  ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
+      return {
+        status: 300,
+        result: 'You need to call connect first',
+        streamId: undefined,
+      };
+    }
+    try {
+      const val: WithCeramicId<Certification> =
+        await createTileDoc<Certification>(
+          content,
+          this.ceramic,
+          this.dataModel,
+          'Certification',
+          ['vess', 'Certification']
+        );
+      const storeIDX = setIDX<IssuedCertifications, 'IssuedCertifications'>(
+        [val.ceramicId],
+        this.ceramic,
+        this.dataStore,
+        'IssuedCertifications',
+        'issued'
+      );
+
+      await Promise.all([storeIDX]);
+      return {
+        status: 200,
+        streamId: val.ceramicId,
+      };
+    } catch (error) {
+      return {
+        status: 300,
+        error: error,
+        result: 'Failed to Issue event',
+        streamId: undefined,
+      };
+    }
+  };
+
+  updateCertification = async (
+    id: string,
+    newItem: Certification
+  ): Promise<BaseResponse> => {
+    if (!this.ceramic || !this.ceramic?.did?.parent) {
+      return {
+        status: 300,
+        result: 'You need to call connect first',
+      };
+    }
+    try {
+      const doc = await TileDocument.load<Certification>(this.ceramic, id);
+      if (!doc.content) throw new Error(`No Item Found: ${id}`);
+      await doc.update(newItem);
+      return {
+        status: 200,
+      };
+    } catch (error) {
+      return {
+        status: 300,
+        error: error,
+        result: 'Failed to Update Event',
       };
     }
   };

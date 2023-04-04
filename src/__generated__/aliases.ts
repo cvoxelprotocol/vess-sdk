@@ -64,6 +64,16 @@ export const aliases = {
       'kjzl6cwe1jw145p47tecgn3vm5tho99y8cwrsuif5zz4d97a2seccucpcgi1114',
     HeldTaskCredentials:
       'kjzl6cwe1jw148das9ycl3ctls9m46cjbb8ivb04o60wu928rmzx7b7caxz6mcu',
+    Certification:
+      'kjzl6cwe1jw14abmon8lihwqn0iw3jo5c30iq461crzfcvvenhie5c2ddwy8i78',
+    CertificationSubject:
+      'kjzl6cwe1jw147i47b2yqgulxfnpkv8ejsam0z4h1bt5uh5ptb20ulgu3jfsgfr',
+    IssuedCertifications:
+      'kjzl6cwe1jw1499nll109xqirnncqs31kzmzdzygsnhbc5y3vm8jfyw131icr7l',
+    IssuedCertificationSubjects:
+      'kjzl6cwe1jw1490f9uge7ni5wly7bxpta7vxahj0e93cu6w7j1v9zublccv28bc',
+    HeldCertificationSubjects:
+      'kjzl6cwe1jw14ak1fnv9ebhdxsdlybfz5hg9vkj90rh5voo915l54jqe4x8m8rf',
   },
   schemas: {
     BasicProfile:
@@ -131,6 +141,16 @@ export const aliases = {
       'ceramic://k3y52l7qbv1frxmt2zmcka7ohzqo7sjsux4e2zibufnne4lw06d5z29b1i49ifzls',
     HeldTaskCredentials:
       'ceramic://k3y52l7qbv1fry53tcqf7ptu1bp9jvh6rex9g1xbqp7s8l1rgqw7ulx0i5neror28',
+    Certification:
+      'ceramic://k3y52l7qbv1frxz15bcsinqgp0pmonylso1f9v7vs1lb7isvarrwqr1bjlutsfabk',
+    CertificationSubject:
+      'ceramic://k3y52l7qbv1frxyyj7iz3dvf3717tnj4bgppgkjsxuzeafy2evccfdzt7vw0fa1og',
+    IssuedCertifications:
+      'ceramic://k3y52l7qbv1fryht3viovpv3o0quee5wqj38lapzxtysqnfvn7lsxqg72hm1vik1s',
+    IssuedCertificationSubjects:
+      'ceramic://k3y52l7qbv1frxjm62caxwpgrh563za55txzevbizcexjqh9ymd54c37r5z5t7thc',
+    HeldCertificationSubjects:
+      'ceramic://k3y52l7qbv1fry6x6356fn8suzjfdhqamv4fdmk9kt9tj4lz8acgc37r7d61zu8sg',
   },
   tiles: {},
 };
