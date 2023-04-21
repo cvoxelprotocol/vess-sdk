@@ -14,6 +14,7 @@ import { _getEIP712WorkCredentialSubjectSignature } from './utils/providerHelper
 import { CeramicClient } from '@ceramicnetwork/http-client';
 import { DIDDataStore } from '@glazed/did-datastore';
 import {
+  CertificationVerifiableCredential,
   EventAttendanceVerifiableCredential,
   VerifiableMembershipSubjectCredential,
 } from './interface/eip712.js';
@@ -25,6 +26,7 @@ import {
 } from './baseVess.js';
 import { DIDSession } from 'did-session';
 import {
+  IssuedCertificationSubjects,
   IssuedEventAttendanceVerifiableCredentials,
   IssuedVerifiableMembershipSubjects,
 } from './__generated__/index.js';
@@ -213,6 +215,51 @@ export class VessForKMS extends BaseVESS {
         uploadBackupPromises.push(uploadBackup);
       }
       await Promise.all([storeIDX, uploadBackupPromises]);
+      return {
+        status: 200,
+        streamIds: streamIds,
+      };
+    } catch (error) {
+      throw new Error(`Failed to Issue Credential:${error}`);
+    }
+  };
+
+  issueCertificationSubjectWithKMS = async (
+    vcs: CertificationVerifiableCredential[]
+  ): Promise<CustomResponse<{ streamIds: string[] }>> => {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
+      throw new Error(
+        `You need to call connect first: ${this.ceramic} | ${this.dataStore}`
+      );
+    }
+    try {
+      let tileDocPromises: Promise<
+        WithCeramicId<CertificationVerifiableCredential>
+      >[] = [];
+      for (const vc of vcs) {
+        const tileDocPromise = createTileDoc<CertificationVerifiableCredential>(
+          vc,
+          this.ceramic,
+          this.dataModel,
+          'CertificationSubject',
+          ['vess', 'CertificationSubject']
+        );
+        tileDocPromises.push(tileDocPromise);
+      }
+      const vals = await Promise.all(tileDocPromises);
+      const streamIds = vals.map((v) => v.ceramicId);
+
+      const storeIDX = setIDX<
+        IssuedCertificationSubjects,
+        'IssuedCertificationSubjects'
+      >(
+        streamIds,
+        this.ceramic,
+        this.dataStore,
+        'IssuedCertificationSubjects',
+        'issued'
+      );
+      await Promise.all([storeIDX]);
       return {
         status: 200,
         streamIds: streamIds,

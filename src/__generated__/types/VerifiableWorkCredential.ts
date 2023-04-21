@@ -5,7 +5,7 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-import { DeliverableItem } from './TaskCredential';
+import { DeliverableItem } from './TaskCredential.js';
 
 export interface VerifiableWorkCredential {
   '@context': string[];

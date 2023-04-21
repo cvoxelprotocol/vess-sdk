@@ -1,4 +1,5 @@
 import {
+  CERTIFICATION_EIP712_TYPE,
   EVENT_ATTENDANCE_EIP712_TYPE,
   MEMBERSHIP_SUBJECT_EIP712_TYPE,
   TypedData,
@@ -11,13 +12,17 @@ export const MEMBERSHIP_SUBJECT_SCHEMA =
   'https://app.vess.id/schemas/VerifiableMembershipSubject.json';
 export const EVENT_ATTENDANCE_SCHEMA =
   'https://app.vess.id/schemas/EventAttendance.json';
+export const CERTIFICATION_SCHEMA =
+  'https://app.vess.id/schemas/certification.json';
 
 export const DEFAULT_VC_TYPE = 'VerifiableCredential';
 export const WORK_VC_TYPE = 'WorkCredential';
 export const MEMBERSHIP_VC_TYPE = 'MembershipCredential';
 export const EVENT_ATTENDANCE_VC_TYPE = 'EventAttendanceCredential';
+export const CERTIFICATION_VC_TYPE = 'CertificationCredential';
 
 export const EVENT_DOMAIN_NAME = 'Verifiable Event Attendance';
+export const CERTIFICATION_DOMAIN_NAME = 'Verifiable Certification';
 export const WORK_DOMAIN_NAME = 'Verifiable Work Credential';
 export const MEMBERSHIP_DOMAIN_NAME = 'Verifiable Membership Subject';
 
@@ -25,6 +30,7 @@ export const VESS_CREDENTIALS_NAME = {
   MEMBERSHIP: 'Membership',
   EVENT_ATTENDANCE: 'EventAttendance',
   WORK_CREDENTIAL: 'WorkCredential',
+  CERTIFICATION: 'Certification',
 } as const;
 
 export type VessCredentialNames = keyof typeof VESS_CREDENTIALS_NAME;
@@ -52,6 +58,12 @@ export const VESS_CREDENTIALS: VessCredentialSchema = {
     domain: EVENT_DOMAIN_NAME,
     schema: EVENT_ATTENDANCE_SCHEMA,
     typedData: EVENT_ATTENDANCE_EIP712_TYPE,
+  },
+  CERTIFICATION: {
+    vcType: CERTIFICATION_VC_TYPE,
+    domain: CERTIFICATION_DOMAIN_NAME,
+    schema: CERTIFICATION_SCHEMA,
+    typedData: CERTIFICATION_EIP712_TYPE,
   },
   WORK_CREDENTIAL: {
     vcType: WORK_VC_TYPE,

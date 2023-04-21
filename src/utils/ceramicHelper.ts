@@ -73,21 +73,33 @@ export const setIDX = async <T extends BaseIDXType, K extends Alias>(
   const currentVals = val?.issued ?? val?.created ?? val?.held ?? [];
   const updatedVals = [...currentVals, ...contentId];
   if (defautParamName === 'created') {
-    await dataStore.set(modelName, {
-      created: updatedVals,
-    });
+    await dataStore.set(
+      modelName,
+      {
+        created: updatedVals,
+      },
+      { pin: true }
+    );
     return;
   }
   if (defautParamName === 'issued') {
-    await dataStore.set(modelName, {
-      issued: updatedVals,
-    });
+    await dataStore.set(
+      modelName,
+      {
+        issued: updatedVals,
+      },
+      { pin: true }
+    );
     return;
   }
   if (defautParamName === 'held') {
-    await dataStore.set(modelName, {
-      held: updatedVals,
-    });
+    await dataStore.set(
+      modelName,
+      {
+        held: updatedVals,
+      },
+      { pin: true }
+    );
     return;
   }
 };
@@ -136,21 +148,33 @@ export const setIDXWithBreaking = async <K extends Alias>(
     throw new Error('You need to call connect first');
   }
   if (defautParamName === 'created') {
-    await dataStore.set(modelName, {
-      created: contentId,
-    });
+    await dataStore.set(
+      modelName,
+      {
+        created: contentId,
+      },
+      { pin: true }
+    );
     return;
   }
   if (defautParamName === 'issued') {
-    await dataStore.set(modelName, {
-      issued: contentId,
-    });
+    await dataStore.set(
+      modelName,
+      {
+        issued: contentId,
+      },
+      { pin: true }
+    );
     return;
   }
   if (defautParamName === 'held') {
-    await dataStore.set(modelName, {
-      held: contentId,
-    });
+    await dataStore.set(
+      modelName,
+      {
+        held: contentId,
+      },
+      { pin: true }
+    );
     return;
   }
 };
@@ -164,7 +188,7 @@ export const setUniqueIDX = async <T, K extends Alias>(
   if (!dataStore || !ceramic?.did?.parent) {
     throw new Error('You need to call connect first');
   }
-  await dataStore.set(modelName, content);
+  await dataStore.set(modelName, content, { pin: true });
 };
 
 export const getTileDoc = async <T>(
@@ -201,6 +225,7 @@ export const getIDXDocs = async <T extends BaseIDXType, K extends Alias, U>(
       const o = getTileDoc<U>(streamId, ceramic);
       arr.push(o);
     }
+
     const res = await Promise.all(arr);
     return removeUndefinedFromArray<WithCeramicId<U>>(res);
   } catch (error) {
@@ -240,6 +265,7 @@ export const updateTileDoc = async <T>(
     await doc.update(content, undefined, {
       anchor: true,
     });
+    await ceramic.pin.add(doc.id);
   } catch (error) {
     console.error(error);
     throw new Error('Failed to Update Tile Doc');
@@ -267,6 +293,7 @@ export const createTileDocument = async <T>(
       {
         anchor: true,
         sync: 1,
+        pin: true,
       }
     );
     return doc;

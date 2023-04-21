@@ -24,3 +24,8 @@ export * from './types/CreatedOldOrganizations.js';
 export * from './types/Tx.js';
 export * from './types/TaskCredential.js';
 export * from './types/HeldTaskCredentials.js';
+export * from './types/Certification.js';
+export * from './types/CertificationSubject.js';
+export * from './types/IssuedCertifications.js';
+export * from './types/IssuedCertificationSubjects.js';
+export * from './types/HeldCertificationSubjects.js';
