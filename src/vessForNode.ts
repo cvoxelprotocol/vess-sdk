@@ -52,7 +52,7 @@ export class VessForNode extends BaseVESS {
     account: string,
     signSIWE: SignSIWE,
     env: 'mainnet' | 'testnet-clay' = 'mainnet',
-    expirationTime?: string
+    expirationTime?: number
   ): Promise<DIDSession> => {
     this.dataModel = getDataModel(env);
     this.env = env;
@@ -68,7 +68,7 @@ export class VessForNode extends BaseVESS {
 
       const session = await DIDSession.authorize(authMethod, {
         resources: ['ceramic://*'],
-        expirationTime: expirationTime,
+        expiresInSecs: expirationTime || 60 * 60 * 24 * 365 * 5,
       });
       this.session = session;
       this.ceramic = new CeramicClient(this.ceramicUrl);

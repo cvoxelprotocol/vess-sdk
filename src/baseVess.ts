@@ -679,15 +679,15 @@ export class BaseVESS {
         'MemberShip',
         ['vess', 'membership']
       );
-      const storeIDX = setIDX<CreatedMemberships, 'CreatedMemberships'>(
+      await setIDX<CreatedMemberships, 'CreatedMemberships'>(
         [val.ceramicId],
         this.ceramic,
         this.dataStore,
         'CreatedMemberships',
         'created'
       );
-      const uploadBackup = this.backupDataStore.uploadMembership(val);
-      await Promise.all([storeIDX, uploadBackup]);
+      // const uploadBackup = this.backupDataStore.uploadMembership(val);
+      // await Promise.all([storeIDX, uploadBackup]);
       return {
         status: 200,
         streamId: val.ceramicId,
@@ -725,15 +725,15 @@ export class BaseVESS {
         'Event',
         ['vess', 'event']
       );
-      const storeIDX = setIDX<IssuedEvents, 'IssuedEvents'>(
+      await setIDX<IssuedEvents, 'IssuedEvents'>(
         [val.ceramicId],
         this.ceramic,
         this.dataStore,
         'IssuedEvents',
         'issued'
       );
-      const uploadBackup = this.backupDataStore.uploadEvent(val);
-      await Promise.all([storeIDX, uploadBackup]);
+      // const uploadBackup = this.backupDataStore.uploadEvent(val);
+      // await Promise.all([storeIDX, uploadBackup]);
       return {
         status: 200,
         streamId: val.ceramicId,
@@ -1155,7 +1155,9 @@ export class BaseVESS {
     }
     try {
       const nowTimestamp = convertDateToTimestampStr(new Date());
-      const doc = await TileDocument.load<WorkCredential>(this.ceramic, id);
+      const doc = await TileDocument.load<WorkCredential>(this.ceramic, id, {
+        sync: 1,
+      });
       await doc.update({ ...newItem, updatedAt: nowTimestamp });
       await this.backupDataStore.uploadCRDL({ ...newItem, ceramicId: id });
       return {
@@ -1184,10 +1186,10 @@ export class BaseVESS {
       };
     }
     try {
-      const doc = await TileDocument.load<Event>(this.ceramic, id);
+      const doc = await TileDocument.load<Event>(this.ceramic, id, { sync: 1 });
       if (!doc.content) throw new Error(`No Item Found: ${id}`);
       await doc.update(newItem);
-      await this.backupDataStore.uploadEvent({ ...newItem, ceramicId: id });
+      // await this.backupDataStore.uploadEvent({ ...newItem, ceramicId: id });
       return {
         status: 200,
       };

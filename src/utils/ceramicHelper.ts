@@ -196,7 +196,7 @@ export const getTileDoc = async <T>(
   ceramic: CeramicClient
 ): Promise<WithCeramicId<T>> => {
   try {
-    const doc = await TileDocument.load<T>(ceramic, streamId);
+    const doc = await TileDocument.load<T>(ceramic, streamId, { sync: 1 });
     return {
       ...doc.content,
       ceramicId: doc.id.toString(),
@@ -260,9 +260,11 @@ export const updateTileDoc = async <T>(
     throw new Error('You need to call connect first');
   }
   try {
-    const doc = await TileDocument.load<T>(ceramic, streamId);
+    const doc = await TileDocument.load<T>(ceramic, streamId, { sync: 1 });
     if (!doc.content) throw new Error(`No Item Found: ${streamId}`);
-    await doc.update(content);
+    await doc.update(content, undefined, {
+      anchor: true,
+    });
     await ceramic.pin.add(doc.id);
   } catch (error) {
     console.error(error);
@@ -288,7 +290,11 @@ export const createTileDocument = async <T>(
         tags: tags,
         schema: schema,
       },
-      { pin: true }
+      {
+        anchor: true,
+        sync: 1,
+        pin: true,
+      }
     );
     return doc;
   } catch (e) {
@@ -354,7 +360,7 @@ export const loadSession = async (
   if (!session || (session.hasSession && session.isExpired)) {
     session = await DIDSession.authorize(authMethod, {
       resources: ['ceramic://*'],
-      expiresInSecs: 60 * 60 * 24 * 90,
+      expiresInSecs: 60 * 60 * 24 * 365 * 5,
     });
     localStorage.setItem('ceramic-session', session.serialize());
   }
