@@ -16,11 +16,10 @@ import {
   createEIP712WorkCredential,
   createEventAttendanceVCTileDoc,
   createMembershipVCTileDoc,
-  safeSend,
   _getEIP712WorkCredentialSubjectSignature,
 } from './utils/providerHelper.js';
 import { AccountId } from 'caip';
-import { EthereumWebAuth, getAccountId } from '@didtools/pkh-ethereum';
+import { EthereumWebAuth } from '@didtools/pkh-ethereum';
 import { CeramicClient } from '@ceramicnetwork/http-client';
 import { DIDDataStore } from '@glazed/did-datastore';
 import { VerifiableMembershipSubject } from './__generated__/types/VerifiableMembershipSubjectCredential';

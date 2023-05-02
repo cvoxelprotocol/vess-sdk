@@ -1,4 +1,4 @@
-import { utils } from 'ethers';
+import { getAddress } from '@ethersproject/address';
 import {
   SignTypedDataVersion,
   recoverTypedSignature,
@@ -283,8 +283,8 @@ export const verifyWorkCredential = async (
     version: SignTypedDataVersion.V4,
   });
   return (
-    utils.getAddress(signer.toLowerCase()) ===
-    utils.getAddress(recoveredAddress.toLowerCase())
+    getAddress(signer.toLowerCase()) ===
+    getAddress(recoveredAddress.toLowerCase())
   );
 };
 // ==== Old Credential ====

@@ -68,7 +68,7 @@ export class VessForNode extends BaseVESS {
 
       const session = await DIDSession.authorize(authMethod, {
         resources: ['ceramic://*'],
-        expiresInSecs: expirationTime || 60 * 60 * 24 * 365 * 5,
+        expiresInSecs: expirationTime || 60 * 60 * 24 * 90,
       });
       this.session = session;
       this.ceramic = new CeramicClient(this.ceramicUrl);

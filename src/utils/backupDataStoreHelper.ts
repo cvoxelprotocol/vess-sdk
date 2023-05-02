@@ -359,6 +359,31 @@ export class BackupDataStore {
           reject(error);
         });
     });
+
+  getIssuedEventAttendanceFromDB = (
+    did?: string
+  ): Promise<EventAttendanceWithId[]> =>
+    new Promise((resolve, reject) => {
+      if (!this.firestore) return [];
+      if (!did) return [];
+      const q = query(
+        collection(this.firestore, 'eventattendances'),
+        where('issuer.id', '==', did)
+      ).withConverter(Eventconverter);
+      getDocs(q)
+        .then((result) => {
+          const docs = result.empty
+            ? []
+            : result.docs.map((doc) => {
+                const d = doc.data() as EventAttendanceWithId;
+                return d;
+              });
+          resolve(docs);
+        })
+        .catch((error) => {
+          reject(error);
+        });
+    });
 }
 
 const membershipConverter = {

@@ -543,6 +543,16 @@ export class BaseVESS {
     return await this.backupDataStore.getHeldEventAttendanceFromDB(did);
   };
 
+  getIssuedEventAttendanceVerifiableCredentialsFromBackup = async (
+    did?: string
+  ): Promise<EventAttendanceWithId[]> => {
+    if (!this.backupDataStore) {
+      console.log('you have to initialize backupDataStore');
+      return [];
+    }
+    return await this.backupDataStore.getIssuedEventAttendanceFromDB(did);
+  };
+
   // ============================== Issue ==============================
 
   /**

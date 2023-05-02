@@ -1,6 +1,6 @@
 {
   "name": "vess-sdk",
-  "version": "1.0.0-alpha.26",
+  "version": "1.0.0-alpha.30",
   "description": "SDK for VESS built on top of Ceramic",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -28,10 +28,11 @@
     "@ceramicnetwork/http-client": "^2.17.0",
     "@ceramicnetwork/stream-tile": "^2.16.0",
     "@didtools/pkh-ethereum": "^0.1.0",
+    "@ethersproject/address": "^5.7.0",
+    "@ethersproject/random": "^5.7.0",
     "@glazed/did-datastore": "^0.3.2",
     "@metamask/eth-sig-util": "^5.0.0",
     "did-session": "^1.0.0",
-    "ethers": "^5.7.2",
     "firebase": "9.16.0"
   }
 }

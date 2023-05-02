@@ -3,7 +3,7 @@ import {
   SignTypedDataVersion,
   TypedDataUtils,
 } from '@metamask/eth-sig-util';
-import { utils } from 'ethers';
+import { getAddress } from '@ethersproject/address';
 import {
   DEFAULT_CONTEXT,
   DEFAULT_VC_TYPE,
@@ -170,8 +170,8 @@ export const verifyEIP712Credential = async (
   );
   const recoveredAddress = await verifyTypedData(data, proofValue);
   return (
-    utils.getAddress(issuer.toLowerCase()) ===
-    utils.getAddress(recoveredAddress.toLowerCase())
+    getAddress(issuer.toLowerCase()) ===
+    getAddress(recoveredAddress.toLowerCase())
   );
 };
 

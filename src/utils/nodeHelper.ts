@@ -1,6 +1,6 @@
 import { AccountId } from 'caip';
 import { createDIDKey } from 'did-session';
-import { randomBytes } from 'ethers/lib/utils.js';
+import { randomBytes } from '@ethersproject/random';
 import {
   Cacao,
   SiweMessage,
