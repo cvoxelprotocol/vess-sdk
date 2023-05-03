@@ -9,3 +9,8 @@ export interface IssuedEventAttendanceVerifiableCredentials {
   issued?: string[];
   [k: string]: unknown;
 }
+
+export interface IssuedEventAttendanceVerifiableCredentialsV2 {
+  issued?: string[];
+  [k: string]: unknown;
+}

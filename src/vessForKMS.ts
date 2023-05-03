@@ -27,7 +27,7 @@ import {
 import { DIDSession } from 'did-session';
 import {
   IssuedCertificationSubjects,
-  IssuedEventAttendanceVerifiableCredentials,
+  IssuedEventAttendanceVerifiableCredentialsV2,
   IssuedVerifiableMembershipSubjects,
 } from './__generated__/index.js';
 
@@ -201,13 +201,13 @@ export class VessForKMS extends BaseVESS {
       const streamIds = vals.map((v) => v.ceramicId);
 
       const storeIDX = setIDX<
-        IssuedEventAttendanceVerifiableCredentials,
-        'IssuedEventAttendanceVerifiableCredentials'
+        IssuedEventAttendanceVerifiableCredentialsV2,
+        'IssuedEventAttendanceVerifiableCredentialsV2'
       >(
         streamIds,
         this.ceramic,
         this.dataStore,
-        'IssuedEventAttendanceVerifiableCredentials',
+        'IssuedEventAttendanceVerifiableCredentialsV2',
         'issued'
       );
       for (const val of vals) {

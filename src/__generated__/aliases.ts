@@ -65,15 +65,17 @@ export const aliases = {
     HeldTaskCredentials:
       'kjzl6cwe1jw148das9ycl3ctls9m46cjbb8ivb04o60wu928rmzx7b7caxz6mcu',
     Certification:
-      'kjzl6cwe1jw14abmon8lihwqn0iw3jo5c30iq461crzfcvvenhie5c2ddwy8i78',
+      'kjzl6cwe1jw149e85b4j9fnpn71d87y3adg9sehjaszkqd0k5wholheyj0em8sx',
     CertificationSubject:
-      'kjzl6cwe1jw147i47b2yqgulxfnpkv8ejsam0z4h1bt5uh5ptb20ulgu3jfsgfr',
+      'kjzl6cwe1jw149inlpsxls94ji7vc9jq4frkciyn144hdop0xxuiuvjmwjzwhp8',
     IssuedCertifications:
-      'kjzl6cwe1jw1499nll109xqirnncqs31kzmzdzygsnhbc5y3vm8jfyw131icr7l',
+      'kjzl6cwe1jw146khdc0p5mi5lg1jfbdc9ykwyqkqzqz6e1cy7br2cch2gmubmgg',
     IssuedCertificationSubjects:
-      'kjzl6cwe1jw1490f9uge7ni5wly7bxpta7vxahj0e93cu6w7j1v9zublccv28bc',
+      'kjzl6cwe1jw147ltjkd5bc1qjxubtljpfaotopr2tqztoyete0udpw3ow966zia',
     HeldCertificationSubjects:
-      'kjzl6cwe1jw14ak1fnv9ebhdxsdlybfz5hg9vkj90rh5voo915l54jqe4x8m8rf',
+      'kjzl6cwe1jw14bhj3xvbkdbyybhporgocazl9b7s51dwn75cgkwpsd9eef9ksn2',
+    IssuedEventAttendanceVerifiableCredentialsV2:
+      'kjzl6cwe1jw14bf2cx6uxys8solxqc6a8ww61x6yic4x9famv0r8h1pt7ozns97',
   },
   schemas: {
     BasicProfile:
@@ -142,15 +144,17 @@ export const aliases = {
     HeldTaskCredentials:
       'ceramic://k3y52l7qbv1fry53tcqf7ptu1bp9jvh6rex9g1xbqp7s8l1rgqw7ulx0i5neror28',
     Certification:
-      'ceramic://k3y52l7qbv1frxz15bcsinqgp0pmonylso1f9v7vs1lb7isvarrwqr1bjlutsfabk',
+      'ceramic://k3y52l7qbv1fry9x7k3iv5dae9npbipx71q1p9ccrc9xxmf718qjcv8wnx59rz400',
     CertificationSubject:
-      'ceramic://k3y52l7qbv1frxyyj7iz3dvf3717tnj4bgppgkjsxuzeafy2evccfdzt7vw0fa1og',
+      'ceramic://k3y52l7qbv1fry6fyaee9678lbz80pp4vpift62i5a4kaza69wk6tjd211954fegw',
     IssuedCertifications:
-      'ceramic://k3y52l7qbv1fryht3viovpv3o0quee5wqj38lapzxtysqnfvn7lsxqg72hm1vik1s',
+      'ceramic://k3y52l7qbv1frxpl0x6meq4mxk7zpka2elelsw12lto4zkj0tuts6b9xr0uyoawow',
     IssuedCertificationSubjects:
-      'ceramic://k3y52l7qbv1frxjm62caxwpgrh563za55txzevbizcexjqh9ymd54c37r5z5t7thc',
+      'ceramic://k3y52l7qbv1frydlqlwl8871q0u7rofzuz9es40idg7ttv0s57kxjg8fzq6ql3x8g',
     HeldCertificationSubjects:
-      'ceramic://k3y52l7qbv1fry6x6356fn8suzjfdhqamv4fdmk9kt9tj4lz8acgc37r7d61zu8sg',
+      'ceramic://k3y52l7qbv1frxozzdt5utfhtcz77s2kn2geb4v7ofd7q57yhd8jhiu3pjdeva0ow',
+    IssuedEventAttendanceVerifiableCredentialsV2:
+      'ceramic://k3y52l7qbv1frxju9gcyvg9lvu1joqnaqo5mzufyntvcptyerxokdzv53oo39zgn4',
   },
   tiles: {},
 };

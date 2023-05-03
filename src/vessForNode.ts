@@ -30,7 +30,7 @@ import {
   CertificationSubject,
   HeldWorkCredentials,
   IssuedCertificationSubjects,
-  IssuedEventAttendanceVerifiableCredentials,
+  IssuedEventAttendanceVerifiableCredentialsV2,
   IssuedVerifiableMembershipSubjects,
   WorkCredential,
 } from './__generated__/index.js';
@@ -271,13 +271,13 @@ export class VessForNode extends BaseVESS {
       const docs = await Promise.all(docsPromises);
       const docUrls = docs.map((doc) => doc.ceramicId);
       await setIDX<
-        IssuedEventAttendanceVerifiableCredentials,
-        'IssuedEventAttendanceVerifiableCredentials'
+        IssuedEventAttendanceVerifiableCredentialsV2,
+        'IssuedEventAttendanceVerifiableCredentialsV2'
       >(
         docUrls,
         this.ceramic,
         this.dataStore,
-        'IssuedEventAttendanceVerifiableCredentials',
+        'IssuedEventAttendanceVerifiableCredentialsV2',
         'issued'
       );
       return {

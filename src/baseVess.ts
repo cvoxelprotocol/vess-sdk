@@ -42,7 +42,6 @@ import {
   Organization,
   OldOrganization,
   HeldEventAttendanceVerifiableCredentials,
-  IssuedEventAttendanceVerifiableCredentials,
   IssuedEvents,
   HeldVerifiableMembershipSubjects,
   IssuedVerifiableMembershipSubjects,
@@ -61,6 +60,7 @@ import {
   IssuedCertifications,
   IssuedCertificationSubjects,
   HeldCertificationSubjects,
+  IssuedEventAttendanceVerifiableCredentialsV2,
 } from './__generated__/index.js';
 import {
   CertificationVerifiableCredential,
@@ -507,10 +507,10 @@ export class BaseVESS {
     did?: string
   ): Promise<EventAttendanceWithId[]> => {
     return await this.getIDX<
-      IssuedEventAttendanceVerifiableCredentials,
-      'IssuedEventAttendanceVerifiableCredentials',
+      IssuedEventAttendanceVerifiableCredentialsV2,
+      'IssuedEventAttendanceVerifiableCredentialsV2',
       EventAttendanceVerifiableCredential
-    >('IssuedEventAttendanceVerifiableCredentials', did);
+    >('IssuedEventAttendanceVerifiableCredentialsV2', did);
   };
 
   /**

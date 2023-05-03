@@ -289,27 +289,6 @@ export class BackupDataStore {
         });
     });
 
-  issueEventAttendancesFromProxy = (
-    param: issueEventAttendancesParam
-  ): Promise<{ [x: string]: string | string[] }> =>
-    new Promise((resolve, reject) => {
-      if (!this.functions) return;
-      const uploadFunc = httpsCallable<
-        issueEventAttendancesParam,
-        { [x: string]: string }
-      >(this.functions, 'issueEventAttendances');
-      uploadFunc(param)
-        .then((result) => {
-          const status = result.data.status as string;
-          const vcs = result.data.vcs.split(',');
-          resolve({ status: status, vcs: vcs });
-        })
-        .catch((error) => {
-          console.log({ error });
-          reject(error);
-        });
-    });
-
   getHeldMembershipSubjectsFromDB = (
     did?: string
   ): Promise<MembershipSubjectWithId[]> =>

@@ -37,6 +37,7 @@ import {
   CertificationSubject,
   IssuedCertificationSubjects,
   HeldCertificationSubjects,
+  IssuedEventAttendanceVerifiableCredentialsV2,
 } from '../__generated__/index.js';
 
 export type OldWorkCredential = {
@@ -163,6 +164,7 @@ export type ModelTypes = ModelTypeAliases<
     IssuedCertifications: IssuedCertifications;
     IssuedCertificationSubjects: IssuedCertificationSubjects;
     HeldCertificationSubjects: HeldCertificationSubjects;
+    IssuedEventAttendanceVerifiableCredentialsV2: IssuedEventAttendanceVerifiableCredentialsV2;
   },
   {
     workCredential: 'WorkCredential';
@@ -200,6 +202,7 @@ export type ModelTypes = ModelTypeAliases<
     IssuedCertifications: 'IssuedCertifications';
     IssuedCertificationSubjects: 'IssuedCertificationSubjects';
     HeldCertificationSubjects: 'HeldCertificationSubjects';
+    IssuedEventAttendanceVerifiableCredentialsV2: 'IssuedEventAttendanceVerifiableCredentialsV2';
   }
 >;
 
@@ -242,8 +245,10 @@ const AliasType = {
   IssuedCertifications: 'IssuedCertifications',
   IssuedCertificationSubjects: 'IssuedCertificationSubjects',
   HeldCertificationSubjects: 'HeldCertificationSubjects',
+  IssuedEventAttendanceVerifiableCredentialsV2:
+    'IssuedEventAttendanceVerifiableCredentialsV2',
 } as const;
-export type AliasTypes = typeof AliasType[keyof typeof AliasType];
+export type AliasTypes = (typeof AliasType)[keyof typeof AliasType];
 export type Alias = keyof ModelTypes['definitions'];
 
 export type BaseResponse = {

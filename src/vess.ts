@@ -30,13 +30,12 @@ import {
   PROD_CERAMIC_URL,
   TESTNET_CERAMIC_URL,
 } from './baseVess.js';
-import { issueEventAttendancesParam } from './utils/backupDataStoreHelper.js';
 import {
   HeldWorkCredentials,
   WorkCredential,
   WorkSubject,
-  IssuedEventAttendanceVerifiableCredentials,
   IssuedVerifiableMembershipSubjects,
+  IssuedEventAttendanceVerifiableCredentialsV2,
 } from './__generated__/index.js';
 import { DIDSession } from 'did-session';
 
@@ -278,13 +277,13 @@ export class VESS extends BaseVESS {
       const ids = vals.map((v) => v.ceramicId);
 
       const storeIDX = setIDX<
-        IssuedEventAttendanceVerifiableCredentials,
-        'IssuedEventAttendanceVerifiableCredentials'
+        IssuedEventAttendanceVerifiableCredentialsV2,
+        'IssuedEventAttendanceVerifiableCredentialsV2'
       >(
         ids,
         this.ceramic,
         this.dataStore,
-        'IssuedEventAttendanceVerifiableCredentials',
+        'IssuedEventAttendanceVerifiableCredentialsV2',
         'issued'
       );
       const uploadBackups =
@@ -302,13 +301,6 @@ export class VESS extends BaseVESS {
         streamIds: [],
       };
     }
-  };
-
-  issueEventAttendancesFromProxy = async (
-    param: issueEventAttendancesParam
-  ): Promise<{ [x: string]: string | string[] }> => {
-    if (!this.backupDataStore) throw new Error('you need to initialize first');
-    return await this.backupDataStore.issueEventAttendancesFromProxy(param);
   };
 
   // ============================== Other ==============================
