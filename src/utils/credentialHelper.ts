@@ -21,6 +21,7 @@ import {
   Proof,
   SignTypedData,
   SignTypedDataForNode,
+  TypedData,
   VerifiableCredential,
   VERIFIABLE_CREDENTIAL_PRIMARY_TYPE,
   VERIFIABLE_CREDENTIAL_W3C_TYPE,
@@ -252,4 +253,20 @@ const formatDomainTypedData = (
     chainId: domain.chainId,
     verifyingContract: domain.verifyingContract,
   };
+};
+
+export const getBasicTypedData = (obj: any): TypedData[] => {
+  const res = Object.keys(obj).map((key) => {
+    const type =
+      typeof key === 'boolean'
+        ? 'bool'
+        : typeof key === 'number'
+        ? 'uint256'
+        : 'string';
+    return {
+      name: key,
+      type: type,
+    } as TypedData;
+  });
+  return res;
 };
