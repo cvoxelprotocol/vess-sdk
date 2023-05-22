@@ -66,6 +66,7 @@ import {
   CertificationVerifiableCredential,
   EventAttendanceVerifiableCredential,
   VerifiableMembershipSubjectCredential,
+  CertVCWithParent,
 } from './interface/eip712.js';
 import { BackupDataStore } from './utils/backupDataStoreHelper.js';
 import { DIDSession } from 'did-session';
@@ -1075,6 +1076,21 @@ export class BaseVESS {
       'HeldCertificationSubjects',
       CertificationVerifiableCredential
     >('HeldCertificationSubjects', did);
+  };
+
+  getCertificationSubject = async (
+    streamId?: string
+  ): Promise<WithCeramicId<CertVCWithParent> | undefined> => {
+    if (!streamId) return undefined;
+    const sub = await getTileDoc<CertificationVerifiableCredential>(
+      streamId,
+      this.ceramic || new CeramicClient(this.ceramicUrl)
+    );
+    const cert = await this.getCertification(
+      sub.credentialSubject.certificationId
+    );
+    if (!cert || !sub) return undefined;
+    return { certification: cert, ...sub };
   };
 
   createCertification = async (

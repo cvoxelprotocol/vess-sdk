@@ -363,10 +363,9 @@ export type CertificationVerifiableCredential = VerifiableCredential & {
   credentialSubject: CertificationSubject;
 };
 
-export type CertificationVerifiableCredentialWithCertification =
-  CertificationVerifiableCredential & {
-    certification: Certification;
-  };
+export type CertVCWithParent = CertificationVerifiableCredential & {
+  certification: Certification;
+};
 
 export interface EIP712CredentialMessageTypes extends EIP712MessageTypes {
   VerifiableCredential: typeof VERIFIABLE_CREDENTIAL_EIP712_TYPE;
