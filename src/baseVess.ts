@@ -1324,6 +1324,62 @@ export class BaseVESS {
       };
     }
   };
+  deleteMembershipRole = async (
+    streamId: string,
+    organizationId: string
+  ): Promise<BaseResponse> => {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
+      throw new Error(
+        `You need to call connect first: ${this.ceramic} | ${this.dataStore}`
+      );
+    }
+    try {
+      // Overwrite and Delete Tile Doc
+      const newItem: Membership = { organizationId, name: '-' };
+      await updateTileDoc<Membership>(this.ceramic, streamId, newItem);
+
+      // remove from IDX
+      await deleteFromIDX<CreatedMemberships, 'CreatedMemberships'>(
+        streamId,
+        this.ceramic,
+        this.dataStore,
+        'CreatedMemberships',
+        'created'
+      );
+      return {
+        status: 200,
+      };
+    } catch (error) {
+      throw new Error(`Failed to Delete Credential:${error}`);
+    }
+  };
+
+  deleteEvent = async (streamId: string): Promise<BaseResponse> => {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
+      throw new Error(
+        `You need to call connect first: ${this.ceramic} | ${this.dataStore}`
+      );
+    }
+    try {
+      // Overwrite and Delete Tile Doc
+      const newItem: Event = { name: '-' };
+      await updateTileDoc<Event>(this.ceramic, streamId, newItem);
+
+      // remove from IDX
+      await deleteFromIDX<IssuedEvents, 'IssuedEvents'>(
+        streamId,
+        this.ceramic,
+        this.dataStore,
+        'IssuedEvents',
+        'issued'
+      );
+      return {
+        status: 200,
+      };
+    } catch (error) {
+      throw new Error(`Failed to Delete Credential:${error}`);
+    }
+  };
 
   deleteHeldMembershipSubjectsFromIDX = async (
     streamId: string

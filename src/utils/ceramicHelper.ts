@@ -265,7 +265,9 @@ export const updateTileDoc = async <T>(
     await doc.update(content, undefined, {
       anchor: true,
     });
-    await ceramic.pin.add(doc.id);
+    if (ceramic.pin) {
+      await ceramic.pin.add(doc.id);
+    }
   } catch (error) {
     console.error(error);
     throw new Error('Failed to Update Tile Doc');

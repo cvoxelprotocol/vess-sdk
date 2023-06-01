@@ -1,6 +1,7 @@
 import {
   BaseResponse,
   CustomResponse,
+  EventAttendanceWithId,
   WithCeramicId,
 } from './interface/index.js';
 import {
@@ -221,6 +222,46 @@ export class VessForKMS extends BaseVESS {
       };
     } catch (error) {
       throw new Error(`Failed to Issue Credential:${error}`);
+    }
+  };
+
+  updateEventAttendanceCredentialWithKMS = async (
+    vcs: EventAttendanceWithId[]
+  ): Promise<BaseResponse> => {
+    if (
+      !this.ceramic ||
+      !this.ceramic?.did?.parent ||
+      !this.dataStore ||
+      !this.backupDataStore
+    ) {
+      throw new Error(
+        `You need to call connect first: ${this.ceramic} | ${this.dataStore}`
+      );
+    }
+    try {
+      let tileDocPromises: Promise<void>[] = [];
+      for (const vc of vcs) {
+        const { ceramicId, ...content } = vc;
+        const promise = updateTileDoc<EventAttendanceVerifiableCredential>(
+          this.ceramic,
+          ceramicId,
+          content
+        );
+        tileDocPromises.push(promise);
+      }
+      await Promise.all(tileDocPromises);
+      let uploadBackupPromises: Promise<{ [x: string]: string }>[] = [];
+      for (const val of vcs) {
+        const uploadBackup = this.backupDataStore.uploadEventAttendance(val);
+        uploadBackupPromises.push(uploadBackup);
+      }
+      await Promise.all([uploadBackupPromises]);
+      return {
+        status: 200,
+      };
+    } catch (error) {
+      console.log(error);
+      throw new Error(`Failed to Update Credential:${error}`);
     }
   };
 
