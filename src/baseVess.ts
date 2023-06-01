@@ -1335,7 +1335,7 @@ export class BaseVESS {
     }
     try {
       // Overwrite and Delete Tile Doc
-      const newItem: Membership = { organizationId, name: '-' };
+      const newItem: Membership = { organizationId: '-', name: '-' };
       await updateTileDoc<Membership>(this.ceramic, streamId, newItem);
 
       // remove from IDX
