@@ -8,7 +8,13 @@ import {
   WithCeramicId,
   WorkCredentialWithId,
 } from './interface/index.js';
-import { createTileDoc, getDataModel, setIDX } from './utils/ceramicHelper.js';
+import {
+  createTileDoc,
+  getDataModel,
+  getPkhDIDFromAddress,
+  isEthereumAddress,
+  setIDX,
+} from './utils/ceramicHelper.js';
 
 import { CeramicClient } from '@ceramicnetwork/http-client';
 import { DIDDataStore } from '@glazed/did-datastore';
@@ -38,8 +44,13 @@ import { SignSIWE } from './interface/kms.js';
 import {
   createVerifiableCredential,
   createVerifiableCredentialForNode,
+  getBasicTypedData,
 } from './utils/credentialHelper.js';
-import { VESS_CREDENTIALS } from './constants/verifiableCredentials.js';
+import {
+  VESS_CREDENTIALS,
+  VerifiableCredentialSchemaType,
+} from './constants/verifiableCredentials.js';
+import { DataFormat } from './interface/sbt.js';
 
 export class VessForNode extends BaseVESS {
   constructor(
@@ -223,7 +234,7 @@ export class VessForNode extends BaseVESS {
     }
   };
 
-  issueEventAttendanceCredentials = async (
+  issueEventAttendanceCredentialsOld = async (
     content: EventWithId,
     issuerAddress: string,
     holderDids: string[],
@@ -290,6 +301,96 @@ export class VessForNode extends BaseVESS {
         error: error,
         result: 'Failed to Issue Work Credential',
         docs: [],
+      };
+    }
+  };
+
+  issueEventAttendanceCredentials = async (
+    content: EventWithId,
+    issuerAddress: string,
+    data: DataFormat[],
+    signTypedData: SignTypedDataForNode,
+    expirationDate?: Date
+  ): Promise<
+    CustomResponse<{
+      vcs: WithCeramicId<EventAttendanceVerifiableCredential>[];
+    }>
+  > => {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
+      return {
+        status: 300,
+        result: 'You need to call connect first',
+        vcs: [],
+      };
+    }
+    try {
+      const issuePromises: Promise<EventAttendanceVerifiableCredential>[] = [];
+      for (let i = 0; i < data.length; i++) {
+        const sub = data[i];
+        const { address, ...otherInfo } = sub;
+        const did = isEthereumAddress(sub.address)
+          ? getPkhDIDFromAddress(sub.address)
+          : sub.address.toLowerCase();
+        const item: EventAttendance = {
+          id: did,
+          eventId: content.ceramicId,
+          eventName: content.name,
+          eventIcon: content.icon,
+          ...otherInfo,
+        };
+        const newType = getBasicTypedData(item);
+        const newSchema: VerifiableCredentialSchemaType = {
+          ...VESS_CREDENTIALS.EVENT_ATTENDANCE,
+          typedData: newType,
+        };
+        console.log({ newSchema });
+        const credentialId = `${content.ceramicId}-${item.id}`;
+        const vcPromise =
+          createVerifiableCredentialForNode<EventAttendanceVerifiableCredential>(
+            issuerAddress,
+            credentialId,
+            newSchema,
+            item,
+            signTypedData,
+            undefined,
+            expirationDate ? expirationDate.toUTCString() : undefined
+          );
+        issuePromises.push(vcPromise);
+      }
+      const vcs = await Promise.all(issuePromises);
+      const docsPromises: Promise<EventAttendanceWithId>[] = [];
+      for (const vc of vcs) {
+        const docPromise = createTileDoc<EventAttendanceVerifiableCredential>(
+          vc,
+          this.ceramic,
+          this.dataModel,
+          'EventAttendanceVerifiableCredential',
+          ['vess', 'eventAttendanceCredential']
+        );
+        docsPromises.push(docPromise);
+      }
+      const docs = await Promise.all(docsPromises);
+      const docUrls = docs.map((doc) => doc.ceramicId);
+      await setIDX<
+        IssuedEventAttendanceVerifiableCredentialsV2,
+        'IssuedEventAttendanceVerifiableCredentialsV2'
+      >(
+        docUrls,
+        this.ceramic,
+        this.dataStore,
+        'IssuedEventAttendanceVerifiableCredentialsV2',
+        'issued'
+      );
+      return {
+        status: 200,
+        vcs: docs,
+      };
+    } catch (error) {
+      return {
+        status: 300,
+        error: error,
+        result: 'Failed to Issue Work Credential',
+        vcs: [],
       };
     }
   };

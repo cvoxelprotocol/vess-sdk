@@ -264,6 +264,7 @@ export const updateTileDoc = async <T>(
     if (!doc.content) throw new Error(`No Item Found: ${streamId}`);
     await doc.update(content, undefined, {
       anchor: true,
+      pin: true,
     });
     if (ceramic.pin) {
       await ceramic.pin.add(doc.id);

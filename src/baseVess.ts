@@ -1286,6 +1286,30 @@ export class BaseVESS {
     }
   };
 
+  updateMembership = async (
+    newItem: WithCeramicId<Membership>
+  ): Promise<BaseResponse> => {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.backupDataStore) {
+      return {
+        status: 300,
+        result: 'You need to call connect first',
+      };
+    }
+    try {
+      const { ceramicId, ...content } = newItem;
+      await updateTileDoc<Membership>(this.ceramic, ceramicId, content);
+      return {
+        status: 200,
+      };
+    } catch (error) {
+      return {
+        status: 300,
+        error: error,
+        result: 'Failed to Update Task',
+      };
+    }
+  };
+
   // ============================== Delete ==============================
 
   /**
