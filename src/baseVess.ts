@@ -1198,6 +1198,43 @@ export class BaseVESS {
     }
   };
 
+
+
+  /**
+   * Update Work Credential
+   * @param id
+   * @param newItem
+   * @returns
+   */
+  updateSelfClaimedMembershipSubject = async (
+    id: string,
+    newItem: SelfClaimedMembershipSubject
+  ): Promise<BaseResponse> => {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.backupDataStore) {
+      return {
+        status: 300,
+        result: 'You need to call connect first',
+      };
+    }
+    try {
+      const nowTimestamp = convertDateToTimestampStr(new Date());
+      const doc = await TileDocument.load<SelfClaimedMembershipSubject>(this.ceramic, id, {
+        sync: 1,
+      });
+      await doc.update({ ...newItem, updatedAt: nowTimestamp });
+      await this.backupDataStore.uploadCRDL({ ...newItem, ceramicId: id });
+      return {
+        status: 200,
+      };
+    } catch (error) {
+      return {
+        status: 300,
+        error: error,
+        result: 'Failed to Update Work Credential',
+      };
+    }
+  };
+
   /**
    * Update Event
    * @param id
