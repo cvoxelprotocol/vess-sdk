@@ -1201,7 +1201,7 @@ export class BaseVESS {
 
 
   /**
-   * Update Work Credential
+   * Update Self Claimed Memebership Object
    * @param id
    * @param newItem
    * @returns
@@ -1222,7 +1222,8 @@ export class BaseVESS {
         sync: 1,
       });
       await doc.update({ ...newItem, updatedAt: nowTimestamp });
-      await this.backupDataStore.uploadCRDL({ ...newItem, ceramicId: id });
+      if (!doc.content) throw new Error(`No Item Found: ${id}`);
+      //await this.backupDataStore.uploadCRDL({ ...newItem, ceramicId: id });
       return {
         status: 200,
       };
