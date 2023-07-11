@@ -7,6 +7,9 @@ dependencies:
   '@ceramicnetwork/stream-tile':
     specifier: ^2.16.0
     version: 2.16.0
+  '@didtools/cacao':
+    specifier: ^2.1.0
+    version: 2.1.0
   '@didtools/pkh-ethereum':
     specifier: ^0.1.0
     version: 0.1.0
@@ -22,6 +25,12 @@ dependencies:
   '@metamask/eth-sig-util':
     specifier: ^5.0.0
     version: 5.0.0
+  '@stablelib/random':
+    specifier: ^1.0.2
+    version: 1.0.2
+  caip:
+    specifier: ^1.1.0
+    version: 1.1.0
   did-session:
     specifier: ^1.0.0
     version: 1.0.0
