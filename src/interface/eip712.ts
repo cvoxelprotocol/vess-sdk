@@ -41,7 +41,8 @@ export interface TypedData {
     | 'Client'
     | 'TX'
     | 'Proof'
-    | 'VerifiableMembershipSubject';
+    | 'VerifiableMembershipSubject'
+    | 'Eip712';
 }
 
 export const DOMAIN_TYPE: TypedData[] = [
@@ -326,10 +327,15 @@ export const VERIFIABLE_CREDENTIAL_W3C_TYPE: TypedData[] = [
 
 export const PROOF_W3C_TYPE: TypedData[] = [
   { name: 'verificationMethod', type: 'string' },
-  { name: 'ethereumAddress', type: 'address' },
   { name: 'created', type: 'string' },
   { name: 'proofPurpose', type: 'string' },
   { name: 'type', type: 'string' },
+  { name: 'eip712', type: 'Eip712' },
+];
+
+export const EIP712_TYPE: TypedData[] = [
+  { name: 'primaryType', type: 'string' },
+  { name: 'types', type: 'string' },
 ];
 
 export interface Proof {

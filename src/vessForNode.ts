@@ -328,9 +328,9 @@ export class VessForNode extends BaseVESS {
       for (let i = 0; i < data.length; i++) {
         const sub = data[i];
         const { address, ...otherInfo } = sub;
-        const did = isEthereumAddress(sub.address)
-          ? getPkhDIDFromAddress(sub.address)
-          : sub.address.toLowerCase();
+        const did = isEthereumAddress(address)
+          ? getPkhDIDFromAddress(address)
+          : address.toLowerCase();
         const item: EventAttendance = {
           id: did,
           eventId: content.ceramicId,

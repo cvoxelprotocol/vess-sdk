@@ -7,3 +7,4 @@ export * from './interface/eip712.js';
 export * from './utils/index.js';
 export * from './__generated__/index.js';
 export * from './constants/verifiableCredentials.js';
+export * from './utils/MigrationHelper.js';

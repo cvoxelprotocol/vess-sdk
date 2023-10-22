@@ -1198,8 +1198,6 @@ export class BaseVESS {
     }
   };
 
-
-
   /**
    * Update Self Claimed Memebership Object
    * @param id
@@ -1218,9 +1216,13 @@ export class BaseVESS {
     }
     try {
       const nowTimestamp = convertDateToTimestampStr(new Date());
-      const doc = await TileDocument.load<SelfClaimedMembershipSubject>(this.ceramic, id, {
-        sync: 1,
-      });
+      const doc = await TileDocument.load<SelfClaimedMembershipSubject>(
+        this.ceramic,
+        id,
+        {
+          sync: 1,
+        }
+      );
       await doc.update({ ...newItem, updatedAt: nowTimestamp });
       if (!doc.content) throw new Error(`No Item Found: ${id}`);
       //await this.backupDataStore.uploadCRDL({ ...newItem, ceramicId: id });

@@ -1,6 +1,6 @@
 {
   "name": "vess-sdk",
-  "version": "1.0.0-alpha.40",
+  "version": "1.0.0-alpha.42",
   "description": "SDK for VESS built on top of Ceramic",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -15,7 +15,6 @@
   ],
   "scripts": {
     "build": "tsc && cp -r ./src/__generated__/types ./dist/__generated__/.",
-    "prepublishOnly": "yarn build",
     "ceramic": "ceramic daemon",
     "compose": "CERAMIC_ENABLE_EXPERIMENTAL_COMPOSE_DB='true' ceramic daemon --config ./composedb.config.json"
   },
@@ -25,17 +24,19 @@
     "typescript": "^4.8.4"
   },
   "dependencies": {
-    "@ceramicnetwork/http-client": "^2.17.0",
-    "@ceramicnetwork/stream-tile": "^2.16.0",
+    "@ceramicnetwork/common": "^2.33.0",
+    "@ceramicnetwork/http-client": "^2.30.0",
+    "@ceramicnetwork/stream-tile": "^2.29.0",
     "@didtools/cacao": "^2.1.0",
-    "@didtools/pkh-ethereum": "^0.1.0",
+    "@didtools/pkh-ethereum": "^0.4.1",
     "@ethersproject/address": "^5.7.0",
     "@ethersproject/random": "^5.7.0",
     "@glazed/did-datastore": "^0.3.2",
     "@metamask/eth-sig-util": "^5.0.0",
     "@stablelib/random": "^1.0.2",
     "caip": "^1.1.0",
-    "did-session": "^1.0.0",
+    "did-session": "2.0.1",
+    "dids": "4.0.3",
     "firebase": "9.16.0"
   }
 }
