@@ -1,5 +1,10 @@
 import { CeramicClient } from '@ceramicnetwork/http-client';
-import { createTileDoc, getDataModel, setIDX } from './ceramicHelper.js';
+import {
+  createTileDoc,
+  getDataModel,
+  setIDX,
+  updateTileDoc,
+} from './ceramicHelper.js';
 import { DIDDataStore } from '@glazed/did-datastore';
 import {
   IssuedCertificationSubjects,
@@ -9,6 +14,29 @@ import {
 import { PROD_CERAMIC_URL, TESTNET_CERAMIC_URL } from '../baseVess.js';
 import { DID } from 'dids';
 import { BackupDataStore } from './backupDataStoreHelper.js';
+import { BaseResponse } from '../interface/index.js';
+
+export const updateCredential = async (
+  ceramicId: string,
+  vc: any,
+  env: 'mainnet' | 'testnet-clay' = 'mainnet',
+  did: DID,
+  saveBackup = false
+): Promise<BaseResponse> => {
+  const ceramic = new CeramicClient(
+    env === 'mainnet' ? PROD_CERAMIC_URL : TESTNET_CERAMIC_URL
+  );
+  ceramic.did = did;
+  await updateTileDoc<any>(ceramic, ceramicId, vc);
+  if (saveBackup) {
+    const updateDoc = { ceramicId, ...vc };
+    const backupDataStore = new BackupDataStore(env);
+    await backupDataStore.uploadMultipleEventAttendances([updateDoc]);
+  }
+  return {
+    status: 200,
+  };
+};
 
 export const storeEventAttendances = async (
   vcs: any[],
