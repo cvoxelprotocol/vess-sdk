@@ -17,7 +17,6 @@ import { removeUndefinedFromArray } from './common.js';
 
 export const ETH_CHAIN_ID = `eip155:1:`;
 
-
 export const getDataModel = (
   env?: 'mainnet' | 'testnet-clay'
 ): ModelTypesToAliases<ModelTypes> => {
@@ -266,8 +265,8 @@ export const updateTileDoc = async <T>(
     await doc.update(content, undefined, {
       anchor: true,
     });
-    if (ceramic.pin) {
-      await ceramic.pin.add(doc.id);
+    if (ceramic.admin.pin) {
+      await ceramic.admin.pin.add(doc.id, true);
     }
   } catch (error) {
     console.error(error);
