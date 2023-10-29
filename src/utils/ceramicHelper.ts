@@ -262,9 +262,7 @@ export const updateTileDoc = async <T>(
   try {
     const doc = await TileDocument.load<T>(ceramic, streamId, { sync: 1 });
     if (!doc.content) throw new Error(`No Item Found: ${streamId}`);
-    await doc.update(content, undefined, {
-      anchor: true,
-    });
+    await doc.update(content, undefined);
   } catch (error) {
     console.error(error);
     throw new Error('Failed to Update Tile Doc');
