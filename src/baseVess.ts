@@ -68,7 +68,6 @@ import {
   VerifiableMembershipSubjectCredential,
   CertVCWithParent,
 } from './interface/eip712.js';
-import { BackupDataStore } from './utils/backupDataStoreHelper.js';
 import { DIDSession } from 'did-session';
 
 export const PROD_CERAMIC_URL = 'https://prod.cvoxelceramic.com/';
@@ -88,7 +87,6 @@ export class BaseVESS {
   session = undefined as DIDSession | undefined;
   env = 'mainnet' as 'mainnet' | 'testnet-clay';
   ceramicUrl = PROD_CERAMIC_URL as string;
-  backupDataStore = undefined as BackupDataStore | undefined;
 
   constructor(
     env: 'mainnet' | 'testnet-clay' = 'mainnet',
@@ -110,7 +108,6 @@ export class BaseVESS {
     } else {
       this.ceramic = new CeramicClient(this.ceramicUrl);
     }
-    this.backupDataStore = new BackupDataStore(this.env);
   }
 
   isAuthenticated = (): boolean => {
@@ -432,21 +429,6 @@ export class BaseVESS {
    * @param did
    * @returns MembershipSubjectWithId[]
    */
-  getHeldMembershipSubjectsFromBackup = async (
-    did?: string
-  ): Promise<MembershipSubjectWithId[]> => {
-    if (!this.backupDataStore) {
-      console.log('you have to initialize backupDataStore');
-      return [];
-    }
-    return await this.backupDataStore.getHeldMembershipSubjectsFromDB(did);
-  };
-
-  /**
-   *
-   * @param did
-   * @returns MembershipSubjectWithId[]
-   */
   getHeldSelfClaimedMembershipSubjects = async (
     did?: string
   ): Promise<WithCeramicId<SelfClaimedMembershipSubject>[]> => {
@@ -529,31 +511,6 @@ export class BaseVESS {
     >('HeldEventAttendanceVerifiableCredentials', did);
   };
 
-  /**
-   *
-   * @param did
-   * @returns EventAttendanceWithId[]
-   */
-  getHeldEventAttendanceVerifiableCredentialsFromBackup = async (
-    did?: string
-  ): Promise<EventAttendanceWithId[]> => {
-    if (!this.backupDataStore) {
-      console.log('you have to initialize backupDataStore');
-      return [];
-    }
-    return await this.backupDataStore.getHeldEventAttendanceFromDB(did);
-  };
-
-  getIssuedEventAttendanceVerifiableCredentialsFromBackup = async (
-    did?: string
-  ): Promise<EventAttendanceWithId[]> => {
-    if (!this.backupDataStore) {
-      console.log('you have to initialize backupDataStore');
-      return [];
-    }
-    return await this.backupDataStore.getIssuedEventAttendanceFromDB(did);
-  };
-
   // ============================== Issue ==============================
 
   /**
@@ -564,12 +521,7 @@ export class BaseVESS {
   issueVerifiableWorkCredential = async (
     content: VerifiableWorkCredential
   ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
-    if (
-      !this.ceramic ||
-      !this.ceramic?.did?.parent ||
-      !this.dataModel ||
-      !this.backupDataStore
-    ) {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataModel) {
       return {
         status: 300,
         result: 'You need to call connect first',
@@ -595,9 +547,7 @@ export class BaseVESS {
         'heldVerifiableWorkCredentials',
         'held'
       );
-      const uploadBackup =
-        this.backupDataStore.uploadVerifiableWorkCredential(val);
-      await Promise.all([storeIDX, uploadBackup]);
+      await Promise.all([storeIDX]);
       return {
         status: 200,
         streamId: val.ceramicId,
@@ -621,12 +571,7 @@ export class BaseVESS {
     content: Organization,
     saveBackup: boolean = true
   ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
-    if (
-      !this.ceramic ||
-      !this.ceramic?.did?.parent ||
-      !this.dataStore ||
-      !this.backupDataStore
-    ) {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
       return {
         status: 300,
         result: 'You need to call connect first',
@@ -648,10 +593,6 @@ export class BaseVESS {
         'CreatedOrganizations',
         'created'
       );
-      if (saveBackup) {
-        const uploadBackup = this.backupDataStore.uploadOrg(val);
-        await Promise.all([storeIDX, uploadBackup]);
-      }
       await Promise.all([storeIDX]);
       return {
         status: 200,
@@ -670,12 +611,7 @@ export class BaseVESS {
   createMembership = async (
     content: Membership
   ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
-    if (
-      !this.ceramic ||
-      !this.ceramic?.did?.parent ||
-      !this.dataStore ||
-      !this.backupDataStore
-    ) {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
       return {
         status: 300,
         result: 'You need to call connect first',
@@ -697,8 +633,6 @@ export class BaseVESS {
         'CreatedMemberships',
         'created'
       );
-      // const uploadBackup = this.backupDataStore.uploadMembership(val);
-      // await Promise.all([storeIDX, uploadBackup]);
       return {
         status: 200,
         streamId: val.ceramicId,
@@ -716,12 +650,7 @@ export class BaseVESS {
   createEvent = async (
     content: Event
   ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
-    if (
-      !this.ceramic ||
-      !this.ceramic?.did?.parent ||
-      !this.dataStore ||
-      !this.backupDataStore
-    ) {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
       return {
         status: 300,
         result: 'You need to call connect first',
@@ -743,8 +672,6 @@ export class BaseVESS {
         'IssuedEvents',
         'issued'
       );
-      // const uploadBackup = this.backupDataStore.uploadEvent(val);
-      // await Promise.all([storeIDX, uploadBackup]);
       return {
         status: 200,
         streamId: val.ceramicId,
@@ -819,12 +746,7 @@ export class BaseVESS {
   createTask = async (
     content: TaskCredential
   ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
-    if (
-      !this.ceramic ||
-      !this.ceramic?.did?.parent ||
-      !this.dataStore ||
-      !this.backupDataStore
-    ) {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
       return {
         status: 300,
         result: 'You need to call connect first',
@@ -863,12 +785,7 @@ export class BaseVESS {
   createBusinessProfile = async (
     content: BusinessProfile
   ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
-    if (
-      !this.ceramic ||
-      !this.ceramic?.did?.parent ||
-      !this.dataStore ||
-      !this.backupDataStore
-    ) {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
       return {
         status: 300,
         result: 'You need to call connect first',
@@ -907,12 +824,7 @@ export class BaseVESS {
   storeSocialLinks = async (
     content: SocialLinks
   ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
-    if (
-      !this.ceramic ||
-      !this.ceramic?.did?.parent ||
-      !this.dataStore ||
-      !this.backupDataStore
-    ) {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
       return {
         status: 300,
         result: 'You need to call connect first',
@@ -951,12 +863,7 @@ export class BaseVESS {
   storeHighlightedCredentials = async (
     content: HighlightedCredentials
   ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
-    if (
-      !this.ceramic ||
-      !this.ceramic?.did?.parent ||
-      !this.dataStore ||
-      !this.backupDataStore
-    ) {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
       return {
         status: 300,
         result: 'You need to call connect first',
@@ -993,12 +900,7 @@ export class BaseVESS {
   createSelfClaimedMembershipSubject = async (
     content: SelfClaimedMembershipSubject
   ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
-    if (
-      !this.ceramic ||
-      !this.ceramic?.did?.parent ||
-      !this.dataStore ||
-      !this.backupDataStore
-    ) {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
       return {
         status: 300,
         result: 'You need to call connect first',
@@ -1173,7 +1075,7 @@ export class BaseVESS {
     id: string,
     newItem: WorkCredential
   ): Promise<BaseResponse> => {
-    if (!this.ceramic || !this.ceramic?.did?.parent || !this.backupDataStore) {
+    if (!this.ceramic || !this.ceramic?.did?.parent) {
       return {
         status: 300,
         result: 'You need to call connect first',
@@ -1185,7 +1087,6 @@ export class BaseVESS {
         sync: 1,
       });
       await doc.update({ ...newItem, updatedAt: nowTimestamp });
-      await this.backupDataStore.uploadCRDL({ ...newItem, ceramicId: id });
       return {
         status: 200,
       };
@@ -1208,7 +1109,7 @@ export class BaseVESS {
     id: string,
     newItem: SelfClaimedMembershipSubject
   ): Promise<BaseResponse> => {
-    if (!this.ceramic || !this.ceramic?.did?.parent || !this.backupDataStore) {
+    if (!this.ceramic || !this.ceramic?.did?.parent) {
       return {
         status: 300,
         result: 'You need to call connect first',
@@ -1225,7 +1126,6 @@ export class BaseVESS {
       );
       await doc.update({ ...newItem, updatedAt: nowTimestamp });
       if (!doc.content) throw new Error(`No Item Found: ${id}`);
-      //await this.backupDataStore.uploadCRDL({ ...newItem, ceramicId: id });
       return {
         status: 200,
       };
@@ -1245,7 +1145,7 @@ export class BaseVESS {
    * @returns
    */
   updateEvent = async (id: string, newItem: Event): Promise<BaseResponse> => {
-    if (!this.ceramic || !this.ceramic?.did?.parent || !this.backupDataStore) {
+    if (!this.ceramic || !this.ceramic?.did?.parent) {
       return {
         status: 300,
         result: 'You need to call connect first',
@@ -1255,7 +1155,6 @@ export class BaseVESS {
       const doc = await TileDocument.load<Event>(this.ceramic, id, { sync: 1 });
       if (!doc.content) throw new Error(`No Item Found: ${id}`);
       await doc.update(newItem);
-      // await this.backupDataStore.uploadEvent({ ...newItem, ceramicId: id });
       return {
         status: 200,
       };
@@ -1278,7 +1177,7 @@ export class BaseVESS {
     newItem: OrganizationWIthId,
     saveBackup: boolean = true
   ): Promise<BaseResponse> => {
-    if (!this.ceramic || !this.ceramic?.did?.parent || !this.backupDataStore) {
+    if (!this.ceramic || !this.ceramic?.did?.parent) {
       return {
         status: 300,
         result: 'You need to call connect first',
@@ -1287,9 +1186,6 @@ export class BaseVESS {
     try {
       const { ceramicId, ...content } = newItem;
       await updateTileDoc<Organization>(this.ceramic, ceramicId, content);
-      if (saveBackup) {
-        await this.backupDataStore.uploadOrg({ ...newItem });
-      }
       return {
         status: 200,
       };
@@ -1305,7 +1201,7 @@ export class BaseVESS {
   updateTask = async (
     newItem: WithCeramicId<TaskCredential>
   ): Promise<BaseResponse> => {
-    if (!this.ceramic || !this.ceramic?.did?.parent || !this.backupDataStore) {
+    if (!this.ceramic || !this.ceramic?.did?.parent) {
       return {
         status: 300,
         result: 'You need to call connect first',
@@ -1329,7 +1225,7 @@ export class BaseVESS {
   updateMembership = async (
     newItem: WithCeramicId<Membership>
   ): Promise<BaseResponse> => {
-    if (!this.ceramic || !this.ceramic?.did?.parent || !this.backupDataStore) {
+    if (!this.ceramic || !this.ceramic?.did?.parent) {
       return {
         status: 300,
         result: 'You need to call connect first',

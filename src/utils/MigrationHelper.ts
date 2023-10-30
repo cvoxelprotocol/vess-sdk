@@ -13,26 +13,19 @@ import {
 } from '../__generated__';
 import { PROD_CERAMIC_URL, TESTNET_CERAMIC_URL } from '../baseVess.js';
 import { DID } from 'dids';
-import { BackupDataStore } from './backupDataStoreHelper.js';
 import { BaseResponse } from '../interface/index.js';
 
 export const updateCredential = async (
   ceramicId: string,
   vc: any,
   env: 'mainnet' | 'testnet-clay' = 'mainnet',
-  did: DID,
-  saveBackup = false
+  did: DID
 ): Promise<BaseResponse> => {
   const ceramic = new CeramicClient(
     env === 'mainnet' ? PROD_CERAMIC_URL : TESTNET_CERAMIC_URL
   );
   ceramic.did = did;
   await updateTileDoc<any>(ceramic, ceramicId, vc);
-  if (saveBackup) {
-    const updateDoc = { ceramicId, ...vc };
-    const backupDataStore = new BackupDataStore(env);
-    await backupDataStore.uploadMultipleEventAttendances([updateDoc]);
-  }
   return {
     status: 200,
   };
@@ -42,7 +35,7 @@ export const storeEventAttendances = async (
   vcs: any[],
   env: 'mainnet' | 'testnet-clay' = 'mainnet',
   did: DID,
-  saveBackup = false
+  saveIDX = false
 ): Promise<any[]> => {
   const ceramic = new CeramicClient(
     env === 'mainnet' ? PROD_CERAMIC_URL : TESTNET_CERAMIC_URL
@@ -67,20 +60,18 @@ export const storeEventAttendances = async (
     docsPromises.push(docPromise);
   }
   const docs = await Promise.all(docsPromises);
-  const docUrls = docs.map((doc) => doc.ceramicId);
-  await setIDX<
-    IssuedEventAttendanceVerifiableCredentialsV2,
-    'IssuedEventAttendanceVerifiableCredentialsV2'
-  >(
-    docUrls,
-    ceramic,
-    dataStore,
-    'IssuedEventAttendanceVerifiableCredentialsV2',
-    'issued'
-  );
-  if (saveBackup) {
-    const backupDataStore = new BackupDataStore(env);
-    await backupDataStore.uploadMultipleEventAttendances(docs);
+  if (saveIDX) {
+    const docUrls = docs.map((doc) => doc.ceramicId);
+    await setIDX<
+      IssuedEventAttendanceVerifiableCredentialsV2,
+      'IssuedEventAttendanceVerifiableCredentialsV2'
+    >(
+      docUrls,
+      ceramic,
+      dataStore,
+      'IssuedEventAttendanceVerifiableCredentialsV2',
+      'issued'
+    );
   }
   return [...docs];
 };
@@ -89,7 +80,7 @@ export const storeMemberships = async (
   vcs: any[],
   env: 'mainnet' | 'testnet-clay' = 'mainnet',
   did: DID,
-  saveBackup = false
+  saveIDX = false
 ): Promise<any[]> => {
   const ceramic = new CeramicClient(
     env === 'mainnet' ? PROD_CERAMIC_URL : TESTNET_CERAMIC_URL
@@ -114,20 +105,18 @@ export const storeMemberships = async (
     docsPromises.push(docPromise);
   }
   const docs = await Promise.all(docsPromises);
-  const docUrls = docs.map((doc) => doc.ceramicId);
-  await setIDX<
-    IssuedVerifiableMembershipSubjects,
-    'IssuedVerifiableMembershipSubjects'
-  >(
-    docUrls,
-    ceramic,
-    dataStore,
-    'IssuedVerifiableMembershipSubjects',
-    'issued'
-  );
-  if (saveBackup) {
-    const backupDataStore = new BackupDataStore(env);
-    await backupDataStore.uploadMultipleMembershipSubject(docs);
+  if (saveIDX) {
+    const docUrls = docs.map((doc) => doc.ceramicId);
+    await setIDX<
+      IssuedVerifiableMembershipSubjects,
+      'IssuedVerifiableMembershipSubjects'
+    >(
+      docUrls,
+      ceramic,
+      dataStore,
+      'IssuedVerifiableMembershipSubjects',
+      'issued'
+    );
   }
   return [...docs];
 };
@@ -136,7 +125,7 @@ export const storeCertificate = async (
   vcs: any[],
   env: 'mainnet' | 'testnet-clay' = 'mainnet',
   did: DID,
-  saveBackup = false
+  saveIDX = false
 ): Promise<any[]> => {
   const ceramic = new CeramicClient(
     env === 'mainnet' ? PROD_CERAMIC_URL : TESTNET_CERAMIC_URL
@@ -161,13 +150,16 @@ export const storeCertificate = async (
     docsPromises.push(docPromise);
   }
   const docs = await Promise.all(docsPromises);
-  const docUrls = docs.map((doc) => doc.ceramicId);
-  await setIDX<IssuedCertificationSubjects, 'IssuedCertificationSubjects'>(
-    docUrls,
-    ceramic,
-    dataStore,
-    'IssuedCertificationSubjects',
-    'issued'
-  );
+  if (saveIDX) {
+    const docUrls = docs.map((doc) => doc.ceramicId);
+    await setIDX<IssuedCertificationSubjects, 'IssuedCertificationSubjects'>(
+      docUrls,
+      ceramic,
+      dataStore,
+      'IssuedCertificationSubjects',
+      'issued'
+    );
+  }
+
   return [...docs];
 };

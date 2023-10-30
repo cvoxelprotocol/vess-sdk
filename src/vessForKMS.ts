@@ -84,12 +84,7 @@ export class VessForKMS extends BaseVESS {
   issueMembershipSubjectWithKMS = async (
     vcs: VerifiableMembershipSubjectCredential[]
   ): Promise<CustomResponse<{ streamIds: string[] }>> => {
-    if (
-      !this.ceramic ||
-      !this.ceramic?.did?.parent ||
-      !this.dataStore ||
-      !this.backupDataStore
-    ) {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
       throw new Error(
         `You need to call connect first: ${this.ceramic} | ${this.dataStore}`
       );
@@ -98,7 +93,6 @@ export class VessForKMS extends BaseVESS {
       let tileDocPromises: Promise<
         WithCeramicId<VerifiableMembershipSubjectCredential>
       >[] = [];
-      let uploadBackupPromises: Promise<{ [x: string]: string }>[] = [];
       for (const vc of vcs) {
         const tileDocPromise =
           createTileDoc<VerifiableMembershipSubjectCredential>(
@@ -122,11 +116,7 @@ export class VessForKMS extends BaseVESS {
         'IssuedVerifiableMembershipSubjects',
         'issued'
       );
-      for (const val of vals) {
-        const uploadBackup = this.backupDataStore.uploadMembershipSubject(val);
-        uploadBackupPromises.push(uploadBackup);
-      }
-      await Promise.all([storeIDX, uploadBackupPromises]);
+      await Promise.all([storeIDX]);
       return {
         status: 200,
         streamIds: streamIds,
@@ -139,12 +129,7 @@ export class VessForKMS extends BaseVESS {
   updateMembershipSubjectWithKMS = async (
     vcs: WithCeramicId<VerifiableMembershipSubjectCredential>[]
   ): Promise<BaseResponse> => {
-    if (
-      !this.ceramic ||
-      !this.ceramic?.did?.parent ||
-      !this.dataStore ||
-      !this.backupDataStore
-    ) {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
       throw new Error(
         `You need to call connect first: ${this.ceramic} | ${this.dataStore}`
       );
@@ -172,12 +157,7 @@ export class VessForKMS extends BaseVESS {
   issueEventAttendanceCredentialWithKMS = async (
     vcs: EventAttendanceVerifiableCredential[]
   ): Promise<CustomResponse<{ streamIds: string[] }>> => {
-    if (
-      !this.ceramic ||
-      !this.ceramic?.did?.parent ||
-      !this.dataStore ||
-      !this.backupDataStore
-    ) {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
       throw new Error(
         `You need to call connect first: ${this.ceramic} | ${this.dataStore}`
       );
@@ -186,7 +166,6 @@ export class VessForKMS extends BaseVESS {
       let tileDocPromises: Promise<
         WithCeramicId<EventAttendanceVerifiableCredential>
       >[] = [];
-      let uploadBackupPromises: Promise<{ [x: string]: string }>[] = [];
       for (const vc of vcs) {
         const tileDocPromise =
           createTileDoc<EventAttendanceVerifiableCredential>(
@@ -211,11 +190,7 @@ export class VessForKMS extends BaseVESS {
         'IssuedEventAttendanceVerifiableCredentialsV2',
         'issued'
       );
-      for (const val of vals) {
-        const uploadBackup = this.backupDataStore.uploadEventAttendance(val);
-        uploadBackupPromises.push(uploadBackup);
-      }
-      await Promise.all([storeIDX, uploadBackupPromises]);
+      await Promise.all([storeIDX]);
       return {
         status: 200,
         streamIds: streamIds,
@@ -228,12 +203,7 @@ export class VessForKMS extends BaseVESS {
   updateEventAttendanceCredentialWithKMS = async (
     vcs: EventAttendanceWithId[]
   ): Promise<BaseResponse> => {
-    if (
-      !this.ceramic ||
-      !this.ceramic?.did?.parent ||
-      !this.dataStore ||
-      !this.backupDataStore
-    ) {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
       throw new Error(
         `You need to call connect first: ${this.ceramic} | ${this.dataStore}`
       );
@@ -250,12 +220,6 @@ export class VessForKMS extends BaseVESS {
         tileDocPromises.push(promise);
       }
       await Promise.all(tileDocPromises);
-      let uploadBackupPromises: Promise<{ [x: string]: string }>[] = [];
-      for (const val of vcs) {
-        const uploadBackup = this.backupDataStore.uploadEventAttendance(val);
-        uploadBackupPromises.push(uploadBackup);
-      }
-      await Promise.all([uploadBackupPromises]);
       return {
         status: 200,
       };

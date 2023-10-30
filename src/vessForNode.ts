@@ -113,12 +113,7 @@ export class VessForNode extends BaseVESS {
   issueWorkCredential = async (
     credential: WorkCredential
   ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
-    if (
-      !this.ceramic ||
-      !this.ceramic?.did?.parent ||
-      !this.dataModel ||
-      !this.backupDataStore
-    ) {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataModel) {
       return {
         status: 300,
         result: 'You need to call connect first',
@@ -141,8 +136,7 @@ export class VessForNode extends BaseVESS {
         'heldWorkCredentials',
         'held'
       );
-      const uploadBackup = this.backupDataStore.uploadCRDL(val);
-      await Promise.all([storeIDX, uploadBackup]);
+      await Promise.all([storeIDX]);
       return {
         status: 200,
         streamId: val.ceramicId,

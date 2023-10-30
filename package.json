@@ -1,6 +1,6 @@
 {
   "name": "vess-sdk",
-  "version": "1.0.0-alpha.47",
+  "version": "1.0.2-alpha.1",
   "description": "SDK for VESS built on top of Ceramic",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -36,7 +36,6 @@
     "@stablelib/random": "^1.0.2",
     "caip": "^1.1.0",
     "did-session": "2.0.1",
-    "dids": "4.0.3",
-    "firebase": "9.16.0"
+    "dids": "4.0.3"
   }
 }

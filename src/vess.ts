@@ -144,12 +144,7 @@ export class VESS extends BaseVESS {
   issueWorkCredential = async (
     content: WorkSubject
   ): Promise<CustomResponse<{ streamId: string | undefined }>> => {
-    if (
-      !this.ceramic ||
-      !this.ceramic?.did?.parent ||
-      !this.dataModel ||
-      !this.backupDataStore
-    ) {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataModel) {
       return {
         status: 300,
         result: 'You need to call connect first',
@@ -177,8 +172,7 @@ export class VESS extends BaseVESS {
         'heldWorkCredentials',
         'held'
       );
-      const uploadBackup = this.backupDataStore.uploadCRDL(val);
-      await Promise.all([storeIDX, uploadBackup]);
+      await Promise.all([storeIDX]);
       return {
         status: 200,
         streamId: val.ceramicId,
@@ -197,12 +191,7 @@ export class VESS extends BaseVESS {
   issueMembershipSubject = async (
     contents: VerifiableMembershipSubject[]
   ): Promise<CustomResponse<{ streamIds: string[] }>> => {
-    if (
-      !this.ceramic ||
-      !this.ceramic?.did?.parent ||
-      !this.dataStore ||
-      !this.backupDataStore
-    ) {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
       throw new Error(
         `You need to call connect first: ${this.ceramic} | ${this.dataStore}`
       );
@@ -231,10 +220,7 @@ export class VESS extends BaseVESS {
         'IssuedVerifiableMembershipSubjects',
         'issued'
       );
-
-      const uploadBackup =
-        this.backupDataStore.uploadMultipleMembershipSubject(vals);
-      await Promise.all([storeIDX, uploadBackup]);
+      await Promise.all([storeIDX]);
       return {
         status: 200,
         streamIds: ids,
@@ -252,12 +238,7 @@ export class VESS extends BaseVESS {
   issueEventAttendanceCredential = async (
     contents: EventAttendance[]
   ): Promise<CustomResponse<{ streamIds: string[] }>> => {
-    if (
-      !this.ceramic ||
-      !this.ceramic?.did?.parent ||
-      !this.dataStore ||
-      !this.backupDataStore
-    ) {
+    if (!this.ceramic || !this.ceramic?.did?.parent || !this.dataStore) {
       throw new Error(
         `You need to call connect first: ${this.ceramic} | ${this.dataStore}`
       );
@@ -286,9 +267,7 @@ export class VESS extends BaseVESS {
         'IssuedEventAttendanceVerifiableCredentialsV2',
         'issued'
       );
-      const uploadBackups =
-        this.backupDataStore.uploadMultipleEventAttendances(vals);
-      await Promise.all([storeIDX, uploadBackups]);
+      await Promise.all([storeIDX]);
       return {
         status: 200,
         streamIds: ids,
@@ -304,31 +283,6 @@ export class VESS extends BaseVESS {
   };
 
   // ============================== Other ==============================
-
-  // Only update backup DB
-  signWorkCredential = async (
-    id: string,
-    credential: WorkCredential,
-    signer: string
-  ): Promise<WorkCredentialWithId | undefined> => {
-    if (!this.backupDataStore) return undefined;
-    const nowTimestamp = convertDateToTimestampStr(new Date());
-    const signature = await _getEIP712WorkCredentialSubjectSignature(
-      credential.subject,
-      this.provider
-    );
-    const crdl: WorkCredentialWithId = {
-      ...credential,
-      signature: {
-        ...credential.signature,
-        partnerSig: signature,
-        partnerSigner: signer,
-      },
-      updatedAt: nowTimestamp,
-    };
-    await this.backupDataStore.uploadCRDL({ ...crdl, ceramicId: id });
-    return crdl;
-  };
 
   getEIP712WorkCredentialSubjectSignature = async (
     subject: WorkSubject
